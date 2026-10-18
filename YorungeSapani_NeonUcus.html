@@ -1,0 +1,4313 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Yörünge Sapanı: Göksel Yolculuk — Kinetik Astral Beceri Oyunu</title>
+<meta name="description" content="Göksel gezegenlerin kütleçekim kuvvetini bir sapan gibi kullan! Zamanı durult, göksel tutulmalardan kaçın, yıldız tozu prizmalarını topla ve gemini rasathanede geliştir.">
+<meta name="theme-color" content="#090d16">
+<style>
+:root {
+  --bg-cosmos: #080c16;
+  --bg-indigo: #0f1626;
+  --bg-card: rgba(15, 23, 40, 0.85);
+  --gold: #ebd08d;
+  --gold-glow: rgba(235, 208, 141, 0.45);
+  --gold-dim: rgba(235, 208, 141, 0.2);
+  --gold-bright: #fff2c9;
+  --brass: #b89243;
+  --celestial-teal: #6ec5b3;
+  --coral-rose: #e57b88;
+  --amethyst: #9c7ad6;
+  --ivory: #faf6ed;
+  --border-gold: rgba(235, 208, 141, 0.35);
+  --ff-title: "Cinzel", "Georgia", "Times New Roman", "Baskerville", serif;
+  --ff-body: "Outfit", "Segoe UI", -apple-system, system-ui, sans-serif;
+  --ff-mono: "Consolas", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  background: #05070d radial-gradient(circle at 50% 25%, #141d33 0%, #060911 85%);
+  color: var(--ivory);
+  font-family: var(--ff-body);
+  overflow: hidden;
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================= 9:16 OYUN ÇERÇEVESİ ================= */
+#app {
+  position: relative;
+  width: min(100vw, calc(100dvh * 9 / 16));
+  height: min(100dvh, calc(100vw * 16 / 9));
+  max-width: 100vw;
+  overflow: hidden;
+  overflow-x: hidden;
+  background: var(--bg-cosmos);
+  container-type: size;
+  box-shadow: 0 0 90px rgba(15, 25, 50, 0.6), 0 0 35px rgba(235, 208, 141, 0.15);
+}
+
+@media (min-aspect-ratio: 10/16) {
+  #app {
+    border-radius: 20px;
+    border: 1px solid rgba(235, 208, 141, 0.25);
+    height: min(96dvh, calc(100vw * 16 / 9));
+    width: min(100vw, calc(96dvh * 9 / 16));
+    max-width: 100vw;
+  }
+}
+
+#game {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* Göksel Takımyıldız & Harita Çerçevesi */
+.astral-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(circle at 50% 50%, transparent 65%, rgba(6, 9, 17, 0.5) 100%),
+    linear-gradient(rgba(235, 208, 141, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(235, 208, 141, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 36px 36px, 36px 36px;
+  z-index: 2;
+}
+
+/* Zaman Durgunluğu (Slo-Mo Vignette) */
+#slowVignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgba(156, 122, 214, 0.3) 70%, rgba(235, 208, 141, 0.4) 100%);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  mix-blend-mode: screen;
+  z-index: 3;
+}
+#slowVignette.on { opacity: 1; }
+
+.hidden { display: none !important; }
+
+/* ================= GÖKSEL TELEMETRİ HUD ================= */
+#hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 3cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqw;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hud-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.hud-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqw;
+}
+
+.hud-label {
+  font-family: var(--ff-mono);
+  font-size: 2.2cqw;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.hud-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5cqw;
+}
+
+.hud-score-val {
+  font-family: var(--ff-title);
+  font-size: 7.2cqw;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--ivory);
+  text-shadow: 0 0 16px rgba(235, 208, 141, 0.6), 0 0 35px rgba(235, 208, 141, 0.2);
+  line-height: 1;
+}
+
+.hud-mult-badge {
+  font-family: var(--ff-mono);
+  font-size: 3.6cqw;
+  font-weight: 700;
+  padding: 0.4cqw 1.8cqw;
+  border-radius: 4px;
+  background: rgba(235, 208, 141, 0.15);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(235, 208, 141, 0.7);
+  opacity: 0.25;
+  transition: transform 0.25s, opacity 0.25s;
+}
+.hud-mult-badge.active {
+  opacity: 1;
+  background: rgba(235, 208, 141, 0.25);
+  border-color: var(--gold);
+  animation: astralGlow 2s infinite ease-in-out;
+}
+.hud-mult-badge.pop {
+  animation: multPop 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes multPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5) translateY(-3px); }
+  100% { transform: scale(1); }
+}
+
+.hud-shield-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2cqw;
+  font-family: var(--ff-mono);
+  font-size: 2.8cqw;
+  color: var(--celestial-teal);
+  font-weight: 700;
+  margin-top: 0.8cqw;
+  text-shadow: 0 0 10px rgba(110, 197, 179, 0.6);
+}
+
+.hud-warp-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8cqw;
+}
+
+.hud-warp-meter {
+  position: relative;
+  width: 32cqw;
+  height: 1.8cqw;
+  background: rgba(8, 12, 22, 0.9);
+  border: 1px solid var(--border-gold);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(235, 208, 141, 0.2);
+}
+
+#slowFill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #6ec5b3, #ebd08d, #fff7db);
+  box-shadow: 0 0 14px var(--gold);
+  transition: width 0.08s linear;
+}
+
+.hud-crystal-box {
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+  background: rgba(15, 23, 40, 0.8);
+  border: 1px solid var(--border-gold);
+  padding: 1.2cqw 3cqw;
+  border-radius: 6px;
+  backdrop-filter: blur(8px);
+}
+
+.hud-crystal-val {
+  font-family: var(--ff-mono);
+  font-size: 5.6cqw;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(235, 208, 141, 0.5);
+  line-height: 1;
+}
+
+/* Astral Prizma / Yıldız Tozu İkonu */
+.gem-icon {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  display: inline-block;
+  background: linear-gradient(135deg, #ffffff, var(--gold) 55%, #b89243);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  filter: drop-shadow(0 0 8px rgba(235, 208, 141, 0.9));
+  flex-shrink: 0;
+}
+
+/* Rehber Şerit */
+.hint-banner {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  font-family: var(--ff-mono);
+  font-size: 2.8cqw;
+  letter-spacing: 0.15em;
+  padding: 1.8cqw 4.8cqw;
+  border-radius: 4px;
+  background: rgba(8, 12, 22, 0.92);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 0 20px rgba(235, 208, 141, 0.25);
+  color: var(--gold);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 5;
+  animation: astralGlow 2.4s infinite ease-in-out;
+}
+@keyframes astralGlow {
+  0%, 100% { opacity: 0.75; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.02); box-shadow: 0 0 28px rgba(235, 208, 141, 0.4); }
+}
+
+/* ================= EKRANLAR ================= */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5cqw;
+  z-index: 10;
+  animation: screenFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: scale(1.015); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ================= 1. GÖKSEL ANA MENÜ ================= */
+#menu {
+  background: radial-gradient(circle at 50% 30%, rgba(20, 30, 55, 0.6) 0%, rgba(6, 9, 17, 0.96) 80%);
+  padding: 2.2cqw 3.6cqw;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+  justify-content: space-between;
+}
+
+.menu-top-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--ff-mono);
+  font-size: 2.3cqw;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  border-bottom: 1px solid rgba(235, 208, 141, 0.2);
+  padding-bottom: 1.1cqw;
+}
+
+.sys-status {
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  color: var(--gold);
+  opacity: 0.9;
+}
+.sys-star {
+  font-size: 2.6cqw;
+  animation: starTwinkle 2s infinite ease-in-out;
+}
+@keyframes starTwinkle { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.btn-astral-outline {
+  background: rgba(12, 18, 32, 0.75);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  padding: 0.8cqw 2.5cqw;
+  border-radius: 4px;
+  font-family: var(--ff-mono);
+  font-size: 2.3cqw;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1.1cqw;
+  transition: all 0.25s;
+}
+.btn-astral-outline:hover {
+  background: rgba(235, 208, 141, 0.15);
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(235, 208, 141, 0.35);
+}
+
+/* Marka & Göksel Başlık - Büyütülmüş ve Prestijli */
+.menu-brand {
+  text-align: center;
+  margin: 0.5cqw 0;
+}
+.brand-motif {
+  font-family: var(--ff-mono);
+  font-size: 2.0cqw;
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  opacity: 0.85;
+  display: block;
+  margin-bottom: 0.4cqw;
+}
+.brand-title {
+  font-family: var(--ff-title);
+  font-size: 7.2cqw;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ivory);
+  margin: 0;
+  text-shadow: 
+    0 0 16px rgba(235, 208, 141, 0.75),
+    0 0 35px rgba(184, 146, 67, 0.45);
+}
+.brand-sub {
+  font-family: var(--ff-title);
+  font-size: 2.8cqw;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(235, 208, 141, 0.6);
+  display: inline-block;
+  margin-top: 0.5cqw;
+  text-transform: uppercase;
+}
+
+/* Göksel Usturlap (Armillary Astrolabe Hub) - Dengeli ve Görkemli */
+.astrolabe-hub {
+  position: relative;
+  width: 58cqw;
+  height: 29cqw;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.astrolabe-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.astrolabe-ring-1 {
+  width: 28cqw;
+  height: 28cqw;
+  border: 1px solid rgba(235, 208, 141, 0.38);
+  animation: rotateArmillary 24s linear infinite;
+}
+.astrolabe-ring-2 {
+  width: 21cqw;
+  height: 21cqw;
+  border: 1px dashed rgba(235, 208, 141, 0.48);
+  animation: rotateArmillary 16s linear infinite reverse;
+}
+.astrolabe-ring-3 {
+  width: 13cqw;
+  height: 13cqw;
+  border: 1px dotted rgba(110, 197, 179, 0.55);
+}
+@keyframes rotateArmillary { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.astrolabe-ship-core {
+  position: relative;
+  width: 12cqw;
+  height: 12cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: celestialSway 3.6s ease-in-out infinite;
+  z-index: 2;
+}
+@keyframes celestialSway {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.04); }
+}
+
+.astrolabe-ship-svg {
+  width: 9.5cqw;
+  height: 9.5cqw;
+  filter: drop-shadow(0 0 12px rgba(235, 208, 141, 0.85)) drop-shadow(0 0 24px rgba(184, 146, 67, 0.5));
+}
+
+.astrolabe-badge {
+  position: absolute;
+  font-family: var(--ff-mono);
+  font-size: 2.0cqw;
+  letter-spacing: 0.1em;
+  padding: 0.5cqw 1.8cqw;
+  border-radius: 3px;
+  background: rgba(8, 12, 22, 0.92);
+  border: 1px solid var(--border-gold);
+  color: var(--gold);
+  white-space: nowrap;
+}
+.badge-left { left: 0; top: 22%; }
+.badge-right { right: 0; bottom: 22%; color: var(--celestial-teal); border-color: rgba(110, 197, 179, 0.45); }
+
+/* Uçuş Kayıtları */
+.menu-telemetry-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.2cqw;
+  margin: 0;
+}
+.telemetry-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-top: 2px solid var(--gold);
+  padding: 1.5cqw 2.2cqw;
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+.tele-label {
+  font-family: var(--ff-mono);
+  font-size: 1.9cqw;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  opacity: 0.85;
+  display: block;
+  margin-bottom: 0.3cqw;
+}
+.tele-val {
+  font-family: var(--ff-title);
+  font-size: 5cqw;
+  font-weight: 700;
+  color: var(--ivory);
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+}
+
+/* Ana Fırlatma / Başlatma Butonu */
+.btn-launch-astral {
+  position: relative;
+  width: 100%;
+  padding: 3cqw 0;
+  margin: 0;
+  background: linear-gradient(135deg, #ebd08d 0%, #cfa24d 50%, #876224 100%);
+  border: 1px solid #fff2c9;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 
+    0 0 28px rgba(235, 208, 141, 0.38),
+    0 0 10px rgba(255, 255, 255, 0.6) inset;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4cqw;
+}
+.btn-launch-astral:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 0 38px rgba(235, 208, 141, 0.65);
+}
+.btn-launch-astral:active {
+  transform: scale(0.98);
+}
+.btn-launch-astral::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transform: skewX(-20deg);
+  animation: celestialShine 3.2s infinite;
+}
+@keyframes celestialShine {
+  0% { left: -100%; }
+  60%, 100% { left: 160%; }
+}
+.launch-main-text {
+  font-family: var(--ff-title);
+  font-size: 5.8cqw;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #1a1205;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+  line-height: 1;
+}
+.launch-sub-text {
+  font-family: var(--ff-mono);
+  font-size: 2.1cqw;
+  letter-spacing: 0.18em;
+  color: #3b2909;
+  text-transform: uppercase;
+}
+
+/* Kontrol Rehber Çubuğu - Yatay Tek Satır */
+.menu-controls-guide {
+  background: rgba(15, 23, 40, 0.75);
+  border: 1px solid rgba(235, 208, 141, 0.25);
+  border-radius: 4px;
+  padding: 1cqw 2.2cqw;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  backdrop-filter: blur(8px);
+}
+.ctrl-tag {
+  font-family: var(--ff-mono);
+  font-size: 1.9cqw;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+  opacity: 0.9;
+  white-space: nowrap;
+}
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  font-family: var(--ff-mono);
+  font-size: 1.9cqw;
+  color: var(--ivory);
+  letter-spacing: 0.03em;
+  gap: 1.6cqw;
+}
+.ctrl-row b {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Rasathane / Atölye Barı */
+.menu-dock-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-radius: 5px;
+  padding: 1.4cqw 2cqw;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9cqw;
+}
+.menu-dock-bar:hover {
+  border-color: var(--gold);
+  background: rgba(22, 33, 56, 0.95);
+  box-shadow: 0 0 20px rgba(235, 208, 141, 0.25);
+}
+.dock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dock-title {
+  font-family: var(--ff-title);
+  font-size: 2.6cqw;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+}
+.dock-link {
+  font-family: var(--ff-mono);
+  font-size: 2.0cqw;
+  color: var(--celestial-teal);
+  letter-spacing: 0.06em;
+}
+.dock-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8cqw;
+}
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5cqw;
+  padding: 0.7cqw 0.3cqw;
+  background: rgba(8, 12, 22, 0.5);
+  border: 1px solid rgba(235, 208, 141, 0.2);
+  border-radius: 4px;
+}
+.dock-item-icon {
+  width: 3.2cqw;
+  height: 3.2cqw;
+}
+.dock-item-name {
+  font-family: var(--ff-mono);
+  font-size: 1.6cqw;
+  color: var(--ivory);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.dock-bars {
+  display: flex;
+  gap: 0.4cqw;
+}
+.dock-bar-pip {
+  width: 1cqw;
+  height: 1cqw;
+  border-radius: 1px;
+  background: rgba(235, 208, 141, 0.18);
+}
+.dock-bar-pip.on {
+  background: var(--gold);
+  box-shadow: 0 0 5px var(--gold);
+}
+
+.max-conqueror-badge {
+  text-align: center;
+  font-family: var(--ff-title);
+  font-size: 2.8cqw;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold);
+  padding: 1.5cqw;
+  background: rgba(235, 208, 141, 0.1);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  animation: astralGlow 2s infinite;
+}
+
+/* ================= 2. GÖKBİLİM ATÖLYESİ (RASATHANE) ================= */
+#market {
+  background: radial-gradient(circle at 50% 10%, rgba(25, 38, 68, 0.8) 0%, rgba(6, 9, 17, 0.98) 75%);
+}
+.market-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  border-bottom: 1px solid var(--border-gold);
+  padding-bottom: 1.6cqw;
+}
+.market-top-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.market-bank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.4cqw;
+  background: rgba(12, 19, 34, 0.9);
+  border: 1px solid var(--border-gold);
+  padding: 0.9cqw 2.4cqw;
+  border-radius: 5px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 16px rgba(235, 208, 141, 0.22);
+}
+.market-bank-badge .bank-label {
+  font-family: var(--ff-mono);
+  font-size: 2cqw;
+  letter-spacing: 0.12em;
+  color: var(--ivory);
+  opacity: 0.85;
+}
+.market-bank-badge .bank-val {
+  font-family: var(--ff-mono);
+  font-size: 3.8cqw;
+  font-weight: 700;
+  color: var(--gold-bright);
+  text-shadow: 0 0 10px rgba(235, 208, 141, 0.7);
+  line-height: 1;
+}
+.market-title-group {
+  text-align: center;
+  margin-top: 0.2cqw;
+}
+.market-title-group h2 {
+  font-family: var(--ff-title);
+  font-size: 4.4cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ivory);
+  text-shadow: 0 0 15px rgba(235, 208, 141, 0.5);
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.market-title-group span {
+  font-family: var(--ff-mono);
+  font-size: 2.1cqw;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  display: block;
+  margin-top: 0.2cqw;
+}
+
+.upgrade-scroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2.2cqw;
+  margin: 2cqw 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  padding-right: 1cqw;
+}
+
+/* Özel Scrollbar */
+.upgrade-scroll-list::-webkit-scrollbar { width: 4px; }
+.upgrade-scroll-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+.cyber-card {
+  display: grid;
+  grid-template-columns: 12cqw 1fr auto;
+  gap: 2.5cqw;
+  align-items: center;
+  padding: 2.8cqw 2.6cqw;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  position: relative;
+  transition: all 0.25s;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.card-details {
+  min-width: 0;
+  overflow: hidden;
+}
+.cyber-card:hover {
+  border-color: var(--gold);
+  background: rgba(22, 33, 56, 0.9);
+  box-shadow: 0 0 20px rgba(235, 208, 141, 0.2);
+}
+
+.card-icon-hex {
+  width: 12cqw;
+  height: 12cqw;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 12, 22, 0.6);
+  border: 1px solid currentColor;
+}
+.card-icon-hex svg {
+  width: 7cqw;
+  height: 7cqw;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.card-details h3 {
+  font-family: var(--ff-title);
+  font-size: 3.6cqw;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4cqw;
+}
+.card-tier {
+  font-family: var(--ff-mono);
+  font-size: 2.3cqw;
+  color: var(--gold);
+  margin-left: 1.2cqw;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+.card-desc {
+  font-size: 2.5cqw;
+  opacity: 0.8;
+  line-height: 1.35;
+  margin-bottom: 1cqw;
+}
+.card-stat {
+  font-family: var(--ff-mono);
+  font-size: 2.5cqw;
+  color: var(--celestial-teal);
+  margin-bottom: 1cqw;
+}
+
+.card-pips {
+  display: flex;
+  gap: 0.8cqw;
+}
+.card-pip {
+  width: 2.6cqw;
+  height: 1.4cqw;
+  border-radius: 2px;
+  background: rgba(235, 208, 141, 0.18);
+}
+.card-pip.on {
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(235, 208, 141, 0.7);
+}
+
+.btn-buy-cyber {
+  font-family: var(--ff-mono);
+  font-size: 3cqw;
+  font-weight: 700;
+  padding: 2.5cqw 3cqw;
+  border: 1px solid #fff2c9;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1.2cqw;
+  background: linear-gradient(135deg, #fff2c9, var(--gold) 60%, #b89243);
+  color: #1a1205;
+  box-shadow: 0 0 16px rgba(235, 208, 141, 0.35);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-buy-cyber:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(235, 208, 141, 0.6);
+}
+.btn-buy-cyber:disabled {
+  filter: grayscale(1) opacity(0.45);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-buy-cyber.maxed {
+  background: linear-gradient(135deg, var(--gold), var(--amethyst));
+  color: #fff;
+  filter: none;
+}
+.cyber-card.bought {
+  animation: cardBought 0.6s ease-out;
+}
+@keyframes cardBought {
+  0% { box-shadow: 0 0 0 rgba(235, 208, 141, 0); }
+  50% { box-shadow: 0 0 35px var(--gold); border-color: var(--gold); }
+  100% { box-shadow: none; }
+}
+
+/* ================= 2.5 GÖKSEL TERSANE & FİLO DÜKKANI STİLLERİ ================= */
+#hangar {
+  background: radial-gradient(circle at 50% 12%, rgba(20, 36, 60, 0.85) 0%, rgba(6, 9, 17, 0.98) 75%);
+}
+
+.menu-dual-docks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.6cqw;
+  margin: 0;
+}
+.mini-dock {
+  padding: 1.2cqw 1.6cqw;
+  gap: 0.8cqw;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.dock-ship-preview-tag {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--ff-mono);
+  font-size: 1.9cqw;
+  color: var(--ivory);
+  background: rgba(8, 12, 22, 0.6);
+  border: 1px solid rgba(235, 208, 141, 0.2);
+  padding: 0.6cqw 1.4cqw;
+  border-radius: 4px;
+}
+.active-ship-label {
+  color: var(--gold);
+  letter-spacing: 0.08em;
+}
+.dock-ship-preview-tag b {
+  color: var(--gold-bright);
+  letter-spacing: 0.06em;
+  font-family: var(--ff-title);
+  font-size: 2.2cqw;
+}
+
+.shop-tabs {
+  display: flex;
+  gap: 1.8cqw;
+  margin: 1.4cqw 0 1.8cqw 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.shop-tab {
+  flex: 1;
+  min-width: 0;
+  padding: 1.8cqw 0;
+  font-family: var(--ff-mono);
+  font-size: 2.2cqw;
+  letter-spacing: 0.1em;
+  border: 1px solid rgba(235, 208, 141, 0.25);
+  background: rgba(15, 23, 40, 0.75);
+  color: rgba(250, 246, 237, 0.7);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.shop-tab:hover {
+  background: rgba(235, 208, 141, 0.15);
+  color: var(--gold);
+}
+.shop-tab.active {
+  background: rgba(235, 208, 141, 0.22);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+  font-weight: 700;
+  box-shadow: 0 0 16px rgba(235, 208, 141, 0.3);
+}
+
+.hangar-showcase {
+  position: relative;
+  background: radial-gradient(circle at 35% 50%, rgba(35, 52, 90, 0.6) 0%, rgba(8, 12, 22, 0.9) 75%);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 3cqw;
+  display: flex;
+  align-items: center;
+  gap: 3.5cqw;
+  overflow: hidden;
+  margin-bottom: 2cqw;
+}
+.showcase-rings {
+  position: relative;
+  width: 22cqw;
+  height: 22cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.showcase-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ring-a {
+  width: 100%;
+  height: 100%;
+  border: 1px solid rgba(235, 208, 141, 0.35);
+  animation: rotateArmillary 18s linear infinite;
+}
+.ring-b {
+  width: 75%;
+  height: 75%;
+  border: 1px dashed rgba(110, 197, 179, 0.45);
+  animation: rotateArmillary 12s linear infinite reverse;
+}
+.showcase-ship {
+  position: absolute;
+  width: 14cqw;
+  height: 14cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: celestialSway 3.2s ease-in-out infinite;
+  z-index: 2;
+}
+.showcase-ship svg {
+  width: 13cqw;
+  height: 13cqw;
+  filter: drop-shadow(0 0 10px rgba(235, 208, 141, 0.8));
+}
+.showcase-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqw;
+  flex: 1;
+}
+.showcase-badge {
+  font-family: var(--ff-mono);
+  font-size: 2cqw;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  background: rgba(235, 208, 141, 0.12);
+  border: 1px solid rgba(235, 208, 141, 0.3);
+  padding: 0.3cqw 1.2cqw;
+  border-radius: 3px;
+  align-self: flex-start;
+}
+.showcase-title {
+  font-family: var(--ff-title);
+  font-size: 3.8cqw;
+  font-weight: 700;
+  color: var(--ivory);
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+.showcase-role {
+  font-family: var(--ff-mono);
+  font-size: 2.2cqw;
+  color: var(--celestial-teal);
+  letter-spacing: 0.08em;
+}
+.showcase-perk {
+  font-family: var(--ff-body);
+  font-size: 2.3cqw;
+  color: rgba(250, 246, 237, 0.85);
+  line-height: 1.3;
+  margin-top: 0.4cqw;
+}
+
+.ship-card-stats {
+  display: flex;
+  gap: 2.5cqw;
+  margin-top: 0.8cqw;
+  font-family: var(--ff-mono);
+  font-size: 2cqw;
+  color: var(--gold);
+}
+.ship-card-stats span {
+  opacity: 0.85;
+}
+.ship-card-stats b {
+  color: var(--ivory);
+}
+.btn-equip-ship {
+  font-family: var(--ff-mono);
+  font-size: 2.8cqw;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2.4cqw 3cqw;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-equip-ship.active {
+  background: rgba(235, 208, 141, 0.25);
+  border: 1px solid var(--gold);
+  color: var(--gold-bright);
+  box-shadow: 0 0 15px rgba(235, 208, 141, 0.35);
+  cursor: default;
+}
+.btn-equip-ship.equip {
+  background: rgba(110, 197, 179, 0.18);
+  border: 1px solid var(--celestial-teal);
+  color: var(--celestial-teal);
+}
+.btn-equip-ship.equip:hover {
+  background: rgba(110, 197, 179, 0.35);
+  box-shadow: 0 0 15px rgba(110, 197, 179, 0.4);
+}
+.btn-equip-ship.buy {
+  background: rgba(235, 208, 141, 0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+}
+.btn-equip-ship.buy:hover:not(:disabled) {
+  background: rgba(235, 208, 141, 0.3);
+  box-shadow: 0 0 15px rgba(235, 208, 141, 0.4);
+}
+.btn-equip-ship:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: rgba(250, 246, 237, 0.2);
+}
+
+/* ================= 2.8 GÖKSEL SEYİR & YOL HARİTASI (ROADMAP) ================= */
+#roadmap {
+  background: radial-gradient(circle at 50% 10%, rgba(20, 35, 60, 0.85) 0%, rgba(6, 9, 17, 0.98) 75%);
+}
+.roadmap-summary-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2cqw;
+  background: rgba(15, 23, 40, 0.7);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 2cqw 3cqw;
+  margin: 1.5cqw 0;
+  backdrop-filter: blur(8px);
+}
+.roadmap-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5cqw;
+}
+.roadmap-summary-item span {
+  font-family: var(--ff-mono);
+  font-size: 2cqw;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.roadmap-summary-item b {
+  font-family: var(--ff-title);
+  font-size: 2.7cqw;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+.star-map-wrapper {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 50% 50%, rgba(13, 21, 38, 0.85) 0%, rgba(6, 9, 17, 0.98) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  margin: 1cqw 0;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.7);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold) rgba(15, 23, 40, 0.5);
+  cursor: grab;
+}
+.star-map-wrapper:active {
+  cursor: grabbing;
+}
+.star-map-wrapper::-webkit-scrollbar {
+  width: 5px;
+}
+.star-map-wrapper::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 3px;
+}
+#starMapCanvas {
+  display: block;
+  width: 100%;
+}
+.star-inspector-card {
+  background: rgba(12, 19, 34, 0.94);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  padding: 2cqw 3cqw;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+.inspector-header {
+  display: flex;
+  align-items: center;
+  gap: 2.2cqw;
+}
+.inspector-star-icon {
+  width: 7cqw;
+  height: 7cqw;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.6cqw;
+  color: var(--gold);
+  background: rgba(235, 208, 141, 0.15);
+  box-shadow: 0 0 12px rgba(235, 208, 141, 0.3);
+  flex-shrink: 0;
+}
+.inspector-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3cqw;
+}
+.inspector-meta h3 {
+  font-family: var(--ff-title);
+  font-size: 3.4cqw;
+  font-weight: 700;
+  color: var(--gold);
+  margin: 0;
+  line-height: 1.1;
+}
+.inspector-meta span {
+  font-family: var(--ff-mono);
+  font-size: 2cqw;
+  color: var(--celestial-teal);
+  letter-spacing: 0.05em;
+}
+.inspector-desc {
+  font-family: var(--ff-sans);
+  font-size: 2.2cqw;
+  color: var(--ivory);
+  opacity: 0.88;
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* ================= 3. GÖKSEL GÖREV RAPORU (GAME OVER) ================= */
+#gameover {
+  background: radial-gradient(circle at center, rgba(35, 18, 30, 0.8) 0%, rgba(6, 9, 17, 0.98) 75%);
+  padding: 6cqw 5cqw;
+}
+
+.go-header {
+  text-align: center;
+  margin-top: 1cqw;
+}
+.go-hazard-tape {
+  font-family: var(--ff-mono);
+  font-size: 2.3cqw;
+  letter-spacing: 0.2em;
+  color: var(--coral-rose);
+  text-transform: uppercase;
+  margin-bottom: 1cqw;
+  display: block;
+}
+.go-title-text {
+  font-family: var(--ff-title);
+  font-size: 9.5cqw;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  color: var(--ivory);
+  text-shadow: 0 0 15px rgba(229, 123, 136, 0.6), 0 0 35px rgba(229, 123, 136, 0.3);
+}
+
+.go-record-banner {
+  font-family: var(--ff-mono);
+  font-size: 3.8cqw;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  text-shadow: 0 0 15px var(--gold);
+  margin-top: 2cqw;
+  animation: multPop 0.8s infinite alternate;
+}
+
+.go-telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3cqw;
+  margin: 4cqw 0;
+}
+.go-tele-item {
+  background: var(--bg-card);
+  border: 1px solid rgba(229, 123, 136, 0.3);
+  padding: 3.5cqw;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqw;
+}
+.go-tele-item span {
+  font-family: var(--ff-mono);
+  font-size: 2.4cqw;
+  opacity: 0.8;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+.go-tele-item b {
+  font-family: var(--ff-title);
+  font-size: 6.2cqw;
+  font-weight: 700;
+  color: var(--ivory);
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+}
+
+.go-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5cqw;
+  margin-bottom: 2cqw;
+}
+.btn-cyber-outline {
+  font-family: var(--ff-mono);
+  font-size: 4cqw;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3.6cqw 0;
+  border: 1px solid var(--gold);
+  background: rgba(235, 208, 141, 0.12);
+  color: var(--gold);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn-cyber-outline:hover {
+  background: rgba(235, 208, 141, 0.25);
+  box-shadow: 0 0 20px rgba(235, 208, 141, 0.35);
+}
+.btn-link-cyber {
+  background: none;
+  border: none;
+  color: rgba(250, 246, 237, 0.65);
+  font-family: var(--ff-mono);
+  font-size: 3.4cqw;
+  cursor: pointer;
+  padding: 1cqw;
+  text-align: center;
+}
+.btn-link-cyber:hover {
+  color: var(--gold);
+}
+</style>
+</head>
+<body>
+
+<main id="app">
+  <canvas id="game" aria-label="Göksel Kinetik Simülatörü"></canvas>
+  <div class="astral-overlay"></div>
+  <div id="slowVignette"></div>
+
+  <!-- GÖKSEL HUD -->
+  <header id="hud" class="hidden">
+    <div class="hud-top-bar">
+      <!-- Skor & Kombo -->
+      <div class="hud-block">
+        <span class="hud-label">✦ GÖKSEL MENZİL</span>
+        <div class="hud-score-row">
+          <span id="hudScore" class="hud-score-val">0</span>
+          <span id="hudMult" class="hud-mult-badge">x1</span>
+        </div>
+        <div id="hudShield" class="hud-shield-status"></div>
+      </div>
+
+      <!-- Zaman Durgunluğu (Slo-Mo) -->
+      <div class="hud-warp-box">
+        <span class="hud-label">✦ ZAMAN DURGUNLUĞU</span>
+        <div class="hud-warp-meter">
+          <div id="slowFill"></div>
+        </div>
+      </div>
+
+      <!-- Yıldız Tozu Prizması -->
+      <div class="hud-block" style="align-items: flex-end;">
+        <span class="hud-label">✦ YILDIZ TOZU</span>
+        <div class="hud-crystal-box">
+          <span class="gem-icon"></span>
+          <span id="hudCrystal" class="hud-crystal-val">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="hint" class="hint-banner hidden"></div>
+
+  <!-- ================= 1. GÖKSEL ANA MENÜ ================= -->
+  <section id="menu" class="screen">
+    <!-- Üst Telemetri Durumu -->
+    <div class="menu-top-strip">
+      <div class="sys-status">
+        <span class="sys-star">✦</span>
+        <span>GÖK KÜRESİ // DOLAŞIM DÜZENİ</span>
+      </div>
+      <button id="btnSound" class="btn-astral-outline" aria-label="Ses Kontrolü">SES: AÇIK</button>
+    </div>
+
+    <!-- Marka & Başlık -->
+    <div class="menu-brand">
+      <span class="brand-motif">✦ ASTRAL KİNETİK SAPAN DOKTRİNİ ✦</span>
+      <h1 class="brand-title">YÖRÜNGE SAPANI</h1>
+      <span class="brand-sub">GÖKSEL YOLCULUK</span>
+    </div>
+
+    <!-- Göksel Usturlap (Armillary Sphere Hub) -->
+    <div class="astrolabe-hub">
+      <div class="astrolabe-ring astrolabe-ring-1"></div>
+      <div class="astrolabe-ring astrolabe-ring-2"></div>
+      <div class="astrolabe-ring astrolabe-ring-3"></div>
+
+      <span id="menuShipBadge" class="astrolabe-badge badge-left">YILDIZ GEMİSİ: AURA-7</span>
+      <div id="menuShipCore" class="astrolabe-ship-core">
+        <svg class="astrolabe-ship-svg" viewBox="0 0 40 40">
+          <polygon points="20,2 35,34 20,27 5,34" fill="url(#astralShipGrad)" stroke="#ebd08d" stroke-width="1.6"/>
+          <line x1="20" y1="2" x2="20" y2="27" stroke="#ffffff" stroke-width="1.2"/>
+          <polygon points="20,7 28,26 20,22 12,26" fill="rgba(255,242,201,0.35)"/>
+          <defs>
+            <linearGradient id="astralShipGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fff9e6"/>
+              <stop offset="50%" stop-color="#ebd08d"/>
+              <stop offset="100%" stop-color="#1b2438"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="astrolabe-badge badge-right">ZAMAN ÇARKI: HAZIR</span>
+    </div>
+
+    <!-- Uçuş İstatistikleri -->
+    <div class="menu-telemetry-row">
+      <div class="telemetry-card">
+        <span class="tele-label">EN YÜKSEK KEŞİF</span>
+        <div class="tele-val"><span id="menuBest">0</span> <small style="font-size:0.5em;opacity:0.7;">IŞIK YILI</small></div>
+      </div>
+      <div class="telemetry-card">
+        <span class="tele-label">YILDIZ TOZU REZERVİ</span>
+        <div class="tele-val"><span class="gem-icon"></span><span id="menuBank">0</span></div>
+      </div>
+    </div>
+
+    <div id="maxBadge" class="max-conqueror-badge hidden">★ RASATHANE ÜSTADI: TÜM GÖKSEL SİSTEMLER EN ÜST SEVİYEDE ★</div>
+
+    <!-- Ana Başlatma Butonu -->
+    <button id="btnPlay" class="btn-launch-astral">
+      <span class="launch-main-text">YOLCULUĞA BAŞLA</span>
+      <span id="menuPlaySub" class="launch-sub-text">[ 1. GEZEGENDEN BAŞLA ]</span>
+    </button>
+
+    <!-- Kontrol Rehberi -->
+    <div class="menu-controls-guide">
+      <span class="ctrl-tag">✦ SEYİR KONTROLLERİ:</span>
+      <div class="ctrl-row">
+        <span><b>Sol Tık / SPACE:</b> Fırla & Dinginlik</span>
+        <span><b>Sağ Tık / A-D:</b> Mikro Dümen</span>
+      </div>
+    </div>
+
+    <!-- Göksel Seyir / Yıldız Haritası Giriş Kartı -->
+    <div id="btnRoadmap" class="menu-dock-bar" style="border-color: rgba(110,197,179,0.35); background: rgba(15,23,40,0.75);">
+      <div class="dock-header">
+        <div class="dock-title" style="color: var(--celestial-teal);">
+          <svg style="width:3.6cqw;height:3.6cqw;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12,2 19,8 19,16 12,22 5,16 5,8"/><circle cx="12" cy="12" r="3"/></svg>
+          <span>GÖKSEL SEYİR & YILDIZ HARİTASI</span>
+        </div>
+        <span class="dock-link">10 GÖKSEL YILDIZ →</span>
+      </div>
+      <div class="dock-ship-preview-tag">
+        <span class="active-ship-label">BAŞLANGIÇ NOKTASI:</span>
+        <b id="menuCpBadge" style="color: var(--gold);">1. GEZEGEN (NORMAL BAŞLANGIÇ)</b>
+      </div>
+    </div>
+
+    <!-- Dok Barları: Tersane (Gemiler) ve Atölye (Aygıtlar) -->
+    <div class="menu-dual-docks">
+      <div id="btnHangar" class="menu-dock-bar mini-dock">
+        <div class="dock-header">
+          <div class="dock-title">
+            <svg style="width:3.5cqw;height:3.5cqw;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12,2 22,20 12,16 2,20"/></svg>
+            <span>GÖKSEL TERSANE</span>
+          </div>
+          <span class="dock-link">FİLO →</span>
+        </div>
+        <div class="dock-ship-preview-tag">
+          <span class="active-ship-label">GEMİ:</span>
+          <b id="menuShipName">AURA-7 KEŞİF GEMİSİ</b>
+        </div>
+      </div>
+
+      <div id="btnMarket" class="menu-dock-bar mini-dock">
+        <div class="dock-header">
+          <div class="dock-title">
+            <svg style="width:3.5cqw;height:3.5cqw;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20M12 2a14.5 14.5 0 0 1 0 20M2 12h20"/></svg>
+            <span>RASATHANE ATÖLYESİ</span>
+          </div>
+          <span class="dock-link">MODÜL →</span>
+        </div>
+        <div id="menuLevels" class="dock-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. GÖKBİLİM ATÖLYESİ (MARKET) ================= -->
+  <section id="market" class="screen hidden">
+    <div class="market-nav">
+      <div class="market-top-strip">
+        <button id="btnBack" class="btn-astral-outline" aria-label="Geri Dön">← GERİ</button>
+        <div class="market-bank-badge">
+          <span class="gem-icon"></span>
+          <span class="bank-label">TOZ REZERVİ:</span>
+          <b id="marketBank" class="bank-val">0</b>
+        </div>
+      </div>
+      <div class="market-title-group">
+        <h2>RASATHANE ATÖLYESİ</h2>
+        <span>ASTRAL DONANIM VE AYGITLAR</span>
+      </div>
+    </div>
+
+    <!-- Hızlı Geçiş Sekmeleri -->
+    <div class="shop-tabs">
+      <button id="btnTabToMapFromMarket" class="shop-tab">✦ SEYİR: HARİTA</button>
+      <button id="btnTabToHangar" class="shop-tab">✦ TERSANE: GEMİLER</button>
+      <button class="shop-tab active">✦ ATÖLYE: AYGITLAR</button>
+    </div>
+
+    <div id="upgradeList" class="upgrade-scroll-list"></div>
+
+    <button id="btnMarketPlay" class="btn-launch-astral" style="padding: 3.5cqw 0;">
+      <span class="launch-main-text" style="font-size: 5.4cqw;">YILDIZLARA DOĞRU SÜZÜL</span>
+    </button>
+  </section>
+
+  <!-- ================= 2.5 GÖKSEL TERSANE (GEMİ DÜKKANI) ================= -->
+  <section id="hangar" class="screen hidden">
+    <div class="market-nav">
+      <div class="market-top-strip">
+        <button id="btnHangarBack" class="btn-astral-outline" aria-label="Geri Dön">← GERİ</button>
+        <div class="market-bank-badge">
+          <span class="gem-icon"></span>
+          <span class="bank-label">TOZ REZERVİ:</span>
+          <b id="hangarBank" class="bank-val">0</b>
+        </div>
+      </div>
+      <div class="market-title-group">
+        <h2>GÖKSEL TERSANE</h2>
+        <span>ASTRAL FİLO & GEMİ DÜKKANI</span>
+      </div>
+    </div>
+
+    <!-- Hızlı Geçiş Sekmeleri -->
+    <div class="shop-tabs">
+      <button id="btnTabToMapFromHangar" class="shop-tab">✦ SEYİR: HARİTA</button>
+      <button class="shop-tab active">✦ TERSANE: GEMİLER</button>
+      <button id="btnTabToMarket" class="shop-tab">✦ ATÖLYE: AYGITLAR</button>
+    </div>
+
+    <!-- Seçili Gemi Vitrini -->
+    <div class="hangar-showcase">
+      <div class="showcase-rings">
+        <div class="showcase-ring ring-a"></div>
+        <div class="showcase-ring ring-b"></div>
+        <div id="showcaseShipCore" class="showcase-ship"></div>
+      </div>
+      <div class="showcase-meta">
+        <span id="showcaseBadge" class="showcase-badge">AKTİF GEMİ</span>
+        <h3 id="showcaseName" class="showcase-title">AURA-7 KEŞİF GEMİSİ</h3>
+        <span id="showcaseRole" class="showcase-role">Hafif Keşif Fırkateyni</span>
+        <div id="showcasePerk" class="showcase-perk">Dengeli Seyir: Standart fırlama ve aerodinamik.</div>
+      </div>
+    </div>
+
+    <!-- Gemi Kartları Listesi -->
+    <div id="shipList" class="upgrade-scroll-list"></div>
+
+    <button id="btnHangarPlay" class="btn-launch-astral" style="padding: 3.5cqw 0;">
+      <span class="launch-main-text" style="font-size: 5.4cqw;">BU GEMİYLE YOLA ÇIK</span>
+    </button>
+  </section>
+
+  <!-- ================= 2.8 GÖKSEL SEYİR & YILDIZ HARİTASI ================= -->
+  <section id="roadmap" class="screen hidden">
+    <div class="market-nav">
+      <div class="market-top-strip">
+        <button id="btnRoadmapBack" class="btn-astral-outline" aria-label="Geri Dön">← GERİ</button>
+        <div class="market-bank-badge">
+          <span class="gem-icon"></span>
+          <span class="bank-label">TOZ REZERVİ:</span>
+          <b id="roadmapBank" class="bank-val">0</b>
+        </div>
+      </div>
+      <div class="market-title-group">
+        <h2>GÖKSEL SEYİR HARİTASI</h2>
+        <span>10 GÖKSEL KONTROL YILDIZI</span>
+      </div>
+    </div>
+
+    <!-- Hızlı Geçiş Sekmeleri -->
+    <div class="shop-tabs">
+      <button class="shop-tab active">✦ SEYİR: YILDIZLAR</button>
+      <button id="btnTabToHangarFromMap" class="shop-tab">✦ TERSANE: GEMİLER</button>
+      <button id="btnTabToMarketFromMap" class="shop-tab">✦ ATÖLYE: AYGITLAR</button>
+    </div>
+
+    <!-- Harita Özeti / Bilgi Kartı -->
+    <div class="roadmap-summary-card">
+      <div class="roadmap-summary-item">
+        <span>EN UZAK KEŞFEDİLEN YILDIZ</span>
+        <b id="roadmapMax">BAŞLANGIÇ (0)</b>
+      </div>
+      <div class="roadmap-summary-item">
+        <span>SEÇİLİ BAŞLANGIÇ NOKTASI</span>
+        <b id="roadmapCur" style="color:var(--gold);">1. GEZEGEN (NORMAL)</b>
+      </div>
+    </div>
+
+    <!-- İnteraktif Göksel Uzay & Yıldız Haritası -->
+    <div id="starMapWrapper" class="star-map-wrapper">
+      <canvas id="starMapCanvas"></canvas>
+    </div>
+
+    <!-- Seçili Yıldız Bilgi Paneli & Yola Çıkış -->
+    <div id="starInspectorCard" class="star-inspector-card">
+      <div class="inspector-header">
+        <div id="inspectorStarIcon" class="inspector-star-icon">★</div>
+        <div class="inspector-meta">
+          <h3 id="inspectorStarTitle">1. GEZEGEN (KLASİK BAŞLANGIÇ)</h3>
+          <span id="inspectorStarSub">Temel Seyir • Güneş Sistemi</span>
+        </div>
+      </div>
+      <p id="inspectorStarDesc" class="inspector-desc">Sıfırdan, en sakin yörüngeden başlayan geleneksel yolculuk doktrini.</p>
+      <button id="btnRoadmapPlay" class="btn-launch-astral" style="padding: 2.8cqw 0;">
+        <span class="launch-main-text" style="font-size: 4.8cqw;">BU NOKTADAN YOLA ÇIK</span>
+        <span id="roadmapPlaySub" class="launch-sub-text">[ 1. GEZEGENDEN BAŞLA ]</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================= 3. GÖKSEL GÖREV RAPORU (GAME OVER) ================= -->
+  <section id="gameover" class="screen hidden">
+    <div class="go-header">
+      <span class="go-hazard-tape">✦ YILDIZLAR ARASINDA KAYBOLUŞ ✦</span>
+      <h2 class="go-title-text">YOLCULUK<br>TAMAMLANDI</h2>
+      <div id="goNew" class="go-record-banner hidden">★ YENİ ASTRAL REKOR! ★</div>
+    </div>
+
+    <div class="go-telemetry-grid">
+      <div class="go-tele-item">
+        <span>KEŞİF SKORU</span>
+        <b id="goScore">0</b>
+      </div>
+      <div class="go-tele-item">
+        <span>EN İYİ KOMBO</span>
+        <b id="goCombo">x1</b>
+      </div>
+      <div class="go-tele-item">
+        <span>GÖKSEL KÜRE</span>
+        <b id="goPlanets">0</b>
+      </div>
+      <div class="go-tele-item">
+        <span>TOPLANAN YILDIZ TOZU</span>
+        <b><span class="gem-icon"></span><span id="goCrystal">0</span></b>
+      </div>
+    </div>
+
+    <div class="go-actions">
+      <button id="btnRetry" class="btn-launch-astral">
+        <span class="launch-main-text">YENİDEN BAŞLA</span>
+        <span id="goRetrySub" class="launch-sub-text">[ DOLAŞIMA DÖN ]</span>
+      </button>
+      <button id="btnGoMarket" class="btn-cyber-outline" style="background:rgba(15,23,40,0.6);">RASATHANE ATÖLYESİ (YÜKSELTMELER)</button>
+      <button id="btnGoMenu" class="btn-link-cyber">KÖŞKE DÖN</button>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+'use strict';
+/* ================= TEMEL SABİTLER ================= */
+const VW = 450, VH = 800, TAU = Math.PI * 2;
+const FONT = '"Cinzel", "Georgia", serif';
+const FONT_SANS = '"Outfit", "Segoe UI", sans-serif';
+const BH_GM = 1.88e6, BH_INFL = 170, BH_CORE = 18;
+const BASE_SPEED = 0.52 * VW; // Başlangıç doğrusal fırlama hızı
+const SHIP_R = 7;
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ================= 10 GÖKSEL KONTROL YILDIZI (ROADMAP: REAL STARS) ================= */
+const CHECKPOINTS = [
+  { 
+    num: 10, 
+    name: 'Sirius (Akyıldız)', 
+    starType: 'A1V Mavi-Beyaz Anakol Yıldızı', 
+    sector: 'Büyük Köpek (Canis Major)', 
+    desc: 'Gökyüzünün en parlak akyıldızı. Yoğun safir-beyaz plazma ışığıyla parıldar.', 
+    color: '#7dd3fc', 
+    glow: 'rgba(125, 211, 252, 0.65)', 
+    core: '#ffffff', 
+    tone: '#0369a1' 
+  },
+  { 
+    num: 20, 
+    name: 'Vega', 
+    starType: 'A0V Zümrüt-Safir Pırlantası', 
+    sector: 'Lir (Lyra) Takımyıldızı', 
+    desc: 'Kuzey semasının elmas kraliçesi; hızla dönen elipsoid kutup ışıltılı yıldız.', 
+    color: '#6ee7b7', 
+    glow: 'rgba(110, 231, 183, 0.65)', 
+    core: '#ffffff', 
+    tone: '#047857' 
+  },
+  { 
+    num: 30, 
+    name: 'Arcturus', 
+    starType: 'K0III Turuncu Dev', 
+    sector: 'Çoban (Boötes) Takımyıldızı', 
+    desc: 'Kuzey göğünün en parlak altın-turuncu devi. Devasa plazma rüzgarları saçar.', 
+    color: '#fb923c', 
+    glow: 'rgba(251, 146, 60, 0.65)', 
+    core: '#fff7ed', 
+    tone: '#c2410c' 
+  },
+  { 
+    num: 40, 
+    name: 'Aldebaran', 
+    starType: 'K5III Kızıl Dev • Boğanın Gözü', 
+    sector: 'Boğa (Taurus) Takımyıldızı', 
+    desc: 'Boğa takımyıldızının hiddetli alevli gözü. Güçlü korona ve yakut alev taçları.', 
+    color: '#f87171', 
+    glow: 'rgba(248, 113, 113, 0.7)', 
+    core: '#fef2f2', 
+    tone: '#b91c1c' 
+  },
+  { 
+    num: 50, 
+    name: 'Betelgeuse', 
+    starType: 'M1-2 Kızıl Süperdev', 
+    sector: 'Avcı (Orion) Takımyıldızı', 
+    desc: 'Avcı omzunda pulsasyon yapan devasa kor canavarı. Büyüleyici süpernova öncesi akkor alevi.', 
+    color: '#ef4444', 
+    glow: 'rgba(239, 68, 68, 0.75)', 
+    core: '#fff1f2', 
+    tone: '#991b1b' 
+  },
+  { 
+    num: 60, 
+    name: 'Rigel', 
+    starType: 'B8Ia Mavi-Beyaz Süperdev', 
+    sector: 'Avcı (Orion) Takımyıldızı', 
+    desc: 'Göz alıcı elektrik mavisi süperdev; Güneş\'ten 40.000 kat parlak muazzam ışıma gücü.', 
+    color: '#38bdf8', 
+    glow: 'rgba(56, 189, 248, 0.75)', 
+    core: '#f0f9ff', 
+    tone: '#0284c7' 
+  },
+  { 
+    num: 70, 
+    name: 'Polaris (Kutupyıldızı)', 
+    starType: 'F7Ib Üçlü Yıldız Sistemi • Kadim Pusula', 
+    sector: 'Küçük Ayı (Ursa Minor)', 
+    desc: 'Gökkubbenin ebedi pusulası; altın-platin taçlı çoklu güneş sistemi ve sarsılmaz kılavuz.', 
+    color: '#fef08a', 
+    glow: 'rgba(254, 240, 138, 0.75)', 
+    core: '#ffffff', 
+    tone: '#ca8a04' 
+  },
+  { 
+    num: 80, 
+    name: 'Antares', 
+    starType: 'M1.5Iab Akrep Kalbi Süperdevi', 
+    sector: 'Akrep (Scorpius) Takımyıldızı', 
+    desc: 'Mars\'ın ezeli rakibi dev süperdev; çevresinde görkemli iyonize nebula haleleri.', 
+    color: '#f43f5e', 
+    glow: 'rgba(244, 63, 94, 0.75)', 
+    core: '#fff1f2', 
+    tone: '#be123c' 
+  },
+  { 
+    num: 90, 
+    name: 'Canopus', 
+    starType: 'F0II Parlak Beyaz Dev', 
+    sector: 'Karina (Carina) Takımyıldızı', 
+    desc: 'Güney semasının en parlak feneri; uzay karanlığını yırtan saf elmas beyaz ışıltı.', 
+    color: '#e0e7ff', 
+    glow: 'rgba(224, 231, 255, 0.8)', 
+    core: '#ffffff', 
+    tone: '#4338ca' 
+  },
+  { 
+    num: 100, 
+    name: 'Deneb (Apex Zirvesi)', 
+    starType: 'A2Ia Beyaz Hiperdev • Ebedi Zirve', 
+    sector: 'Kuğu (Cygnus) Takımyıldızı', 
+    desc: 'Samanyolu\'nun en parlak hiperdevlerinden biri. Kozmik seyrin ebedi doruk noktası.', 
+    color: '#ffd700', 
+    glow: 'rgba(255, 215, 0, 0.85)', 
+    core: '#ffffff', 
+    tone: '#854d0e' 
+  }
+];
+
+/* ================= HIZ VE İLERLEME AYARLARI ================= */
+// Başlangıçta daha yavaş, ritmik ve sakin (~3.85 saniyede 1 tam tur; rahat kontrol)
+const START_ORBIT_REV = 0.26;
+// Her checkpoint (10 gezegende bir) +0.045 dev/s net hız artışı + ara gezegenlerde ufak akış
+const orbitSpeed = () => {
+  const count = G ? G.planetsCount : 0;
+  const cpStage = Math.floor(count / 10);
+  const cpBonus = cpStage * 0.045; // Checkpoint kademe artışı
+  const microBonus = (count % 10) * 0.003; // Ara gezegenlerde akıcı yumuşak geçiş
+  return START_ORBIT_REV + cpBonus + microBonus;
+};
+const flightSpd = () => {
+  let spd = BASE_SPEED + Math.min(0.24 * VW, G.planetsCount * 2.6);
+  if (save.ship === 'solaris') spd *= 1.12;
+  else if (save.ship === 'aethelgard') spd *= 1.08;
+  else if (save.ship === 'archon') spd *= 1.15;
+  return spd;
+};
+
+/* ================= KALICI KAYIT ================= */
+const SAVE_KEY = 'yorungeSapani_astral_v3';
+const save = { 
+  best: 0, bank: 0, sound: true, runs: 0, 
+  up: { shield: 0, laser: 0, magnet: 0, slow: 0 },
+  ship: 'aura7',
+  ships: ['aura7'],
+  maxCheckpoint: 0,
+  startCheckpoint: 0
+};
+try { 
+  const d = JSON.parse(localStorage.getItem(SAVE_KEY) || localStorage.getItem('yorungeSapani_neon_v2') || '{}');
+  Object.assign(save, d);
+  save.up = Object.assign({ shield: 0, laser: 0, magnet: 0, slow: 0 }, d.up || {});
+  save.ships = Array.isArray(d.ships) && d.ships.length ? d.ships : ['aura7'];
+  save.ship = d.ship && save.ships.includes(d.ship) ? d.ship : 'aura7';
+  save.maxCheckpoint = typeof d.maxCheckpoint === 'number' ? d.maxCheckpoint : 0;
+  save.startCheckpoint = typeof d.startCheckpoint === 'number' ? d.startCheckpoint : 0;
+} catch (e) {}
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+/* ================= GÖKSEL FİLO & GEMİLER (TERSANE) ================= */
+const SHIPS = [
+  {
+    id: 'aura7',
+    name: 'AURA-7 KEŞİF GEMİSİ',
+    short: 'AURA-7',
+    badge: 'KEŞİF',
+    role: 'Hafif Keşif Fırkateyni',
+    cost: 0,
+    color: '#ebd08d',
+    colorSec: '#faf6ed',
+    desc: 'Sedef ve altın origami gövde. Dengeli seyir ve pürüzsüz göksel aerodinamik.',
+    trait: 'Dengeli Manevra: Standart göksel kinetik.',
+    stats: { spd: '100%', steer: '100%', trait: 'Dengeli Seyir' }
+  },
+  {
+    id: 'solaris',
+    name: 'SOLARIS-X GÜNEŞ YELKENLİSİ',
+    short: 'SOLARIS-X',
+    badge: 'GÜNEŞ',
+    role: 'Güneş Koronası Kruvazörü',
+    cost: 850,
+    color: '#f59e0b',
+    colorSec: '#fef08a',
+    desc: 'Güneş rüzgarlarını yakalayan ikili yelken kanatları. Yörüngeden fırlarken ekstra itiş sağlar.',
+    trait: 'Güneş İtmesi: Fırlama hızı +%12 artar, yörüngeler arası altın alev bırakır.',
+    stats: { spd: '112%', steer: '105%', trait: '+%12 Fırlama Hızı' }
+  },
+  {
+    id: 'astraea',
+    name: 'ASTRAEA KARTOGRAF',
+    short: 'ASTRAEA',
+    badge: 'KARTOGRAF',
+    role: 'Yıldız Haritacısı Kalyonu',
+    cost: 1750,
+    color: '#6ec5b3',
+    colorSec: '#a7f3d0',
+    desc: 'Uzak takımyıldızları haritalandıran ikili iğne burunlu kalyon. Yıldız tozunu uzaktan çeker.',
+    trait: 'Prizma Çekimi: Mıknatıs menzili +20 birim, toplanan kristal başına ekstra kazanç.',
+    stats: { spd: '100%', steer: '120%', trait: '+20 Mıknatıs & Toz Bonusu' }
+  },
+  {
+    id: 'chrono',
+    name: 'CHRONO-KALYON',
+    short: 'CHRONO',
+    badge: 'ZAMAN',
+    role: 'Zamansal Bükücü Korvet',
+    cost: 3400,
+    color: '#9c7ad6',
+    colorSec: '#e9d5ff',
+    desc: 'Zamanın dingin boyutlarında süzülen ametist küre çekirdekli kadim yıldız gemisi.',
+    trait: 'Dinginlik Boyutu: Zaman Durgunluğu (Slo-Mo) %35 daha yavaş tükenir.',
+    stats: { spd: '95%', steer: '110%', trait: '-%35 Dinginlik Tüketimi' }
+  },
+  {
+    id: 'aethelgard',
+    name: 'AETHELGARD GÖKKUBBE',
+    short: 'AETHELGARD',
+    badge: 'HÜKÜMDAR',
+    role: 'Kadim Usturlap Amiral Gemisi',
+    cost: 6200,
+    color: '#e57b88',
+    colorSec: '#fff2c9',
+    desc: 'Gökkubbe rasathanelerinin efsanevi amiral gemisi. Doğrudan koruma küresiyle sefere başlar.',
+    trait: 'Kadim Hükümranlık: Her sefere +1 Ücretsiz Kalkan ile başlar, Mikro Dümen Çevikliği +%50.',
+    stats: { spd: '108%', steer: '150%', trait: 'Başlangıç Kalkanı & Çift Dümen' }
+  },
+  {
+    id: 'archon',
+    name: 'ARCHON-APEX HÜKÜMRAN',
+    short: 'ARCHON',
+    badge: 'ZİRVE',
+    role: 'Gök Kubbe Amiral Kalyonu',
+    cost: 9800,
+    color: '#ffd700',
+    colorSec: '#ffffff',
+    desc: 'Usturlap rasathanelerinin efsanevi baş tacı. Çift altın kanatları ve gravitasyonel koruma küresiyle sonsuzluğa hükmeder.',
+    trait: 'Zirve Hükümranlık: Her sefere +1 Kalkan ile başlar, Fırlama Hızı +%15 ve Çift Yıldız İzi.',
+    stats: { spd: '115%', steer: '140%', trait: 'Başlangıç Kalkanı & Zirve Hız' }
+  }
+];
+
+function shipSVG(id, sz = 40) {
+  const d = typeof sz === 'number' ? `${sz}px` : sz;
+  if (id === 'solaris') {
+    return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+      <polygon points="20,2 38,36 24,30 20,24 16,30 2,36" fill="#f59e0b" stroke="#fef08a" stroke-width="1.6"/>
+      <polygon points="20,6 28,24 20,20 12,24" fill="#fffbeb"/>
+      <line x1="20" y1="2" x2="20" y2="24" stroke="#d97706" stroke-width="1.2"/>
+    </svg>`;
+  } else if (id === 'astraea') {
+    return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+      <polygon points="20,12 36,36 24,28 20,22 16,28 4,36" fill="#134e4a" stroke="#6ec5b3" stroke-width="1.6"/>
+      <line x1="16" y1="2" x2="16" y2="24" stroke="#a7f3d0" stroke-width="1.8"/>
+      <line x1="24" y1="2" x2="24" y2="24" stroke="#a7f3d0" stroke-width="1.8"/>
+      <circle cx="20" cy="18" r="3" fill="#6ec5b3"/>
+    </svg>`;
+  } else if (id === 'chrono') {
+    return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+      <polygon points="20,2 34,20 30,36 20,28 10,36 6,20" fill="#2e1065" stroke="#9c7ad6" stroke-width="1.6"/>
+      <polygon points="20,12 26,20 20,26 14,20" fill="#e9d5ff"/>
+      <circle cx="20" cy="20" r="1.5" fill="#7c3aed"/>
+    </svg>`;
+  } else if (id === 'aethelgard') {
+    return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+      <polygon points="20,1 28,12 37,8 33,36 20,27 7,36 3,8 12,12" fill="#4c0519" stroke="#ebd08d" stroke-width="1.6"/>
+      <polygon points="20,5 24,18 20,22 16,18" fill="#fff2c9"/>
+      <circle cx="20" cy="15" r="2.5" fill="#e57b88"/>
+    </svg>`;
+  } else if (id === 'archon') {
+    return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+      <polygon points="20,1 32,10 39,22 34,38 20,30 6,38 1,22 8,10" fill="#2d1c02" stroke="#ffd700" stroke-width="1.8"/>
+      <polygon points="20,5 26,16 20,22 14,16" fill="#fff9db"/>
+      <circle cx="20" cy="14" r="2.5" fill="#ffd700"/>
+      <line x1="20" y1="2" x2="20" y2="28" stroke="#ffffff" stroke-width="1.4"/>
+    </svg>`;
+  }
+  // aura7
+  return `<svg viewBox="0 0 40 40" style="width:${d};height:${d};">
+    <polygon points="20,2 35,34 20,27 5,34" fill="url(#astralShipGrad)" stroke="#ebd08d" stroke-width="1.6"/>
+    <line x1="20" y1="2" x2="20" y2="27" stroke="#ffffff" stroke-width="1.2"/>
+    <polygon points="20,7 28,26 20,22 12,26" fill="rgba(255,242,201,0.35)"/>
+  </svg>`;
+}
+
+/* ================= GÖKSEL YÜKSELTMELER ================= */
+const COSTS = [250, 600, 1350, 2800, 5500];
+const laserLen = l => 110 + l * 55;
+const magR = l => l ? 22 + l * 12 : 0;
+const slowCap = l => 1.5 + l * 0.6;
+const slowRegen = l => 0.25 + l * 0.05;
+
+const ICONS = {
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z"/><circle cx="12" cy="11" r="3"/></svg>',
+  laser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>',
+  magnet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h3v8a3 3 0 0 0 6 0V3h3v8a6 6 0 0 1-12 0z"/><line x1="6" y1="7" x2="9" y2="7"/><line x1="15" y1="7" x2="18" y2="7"/></svg>',
+  slow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>'
+};
+
+const UPG = [
+  { id: 'shield', name: 'Gök Küresi Kalkanı', short: 'Kalkan', color: '#6ec5b3', desc: 'Göktaşı darbelerini bertaraf eder veya son güvenli yörüngeye ışınlar.', val: l => l ? `${l} Koruma Küresi / Uçuş` : 'Aygıt Yok' },
+  { id: 'laser', name: 'Astral Işık Hattı', short: 'Pusula', color: '#ebd08d', desc: 'Yıldızlararası sapan rotasını ve göksel tutulma sapmasını çizer.', val: l => `Menzil: ${laserLen(l)} Astral Birim` },
+  { id: 'magnet', name: 'Yıldız Tozu Çekimi', short: 'Mıknatıs', color: '#cfa24d', desc: 'Gök boşluğundaki parıltılı astral prizmaları gemiye doğru çeker.', val: l => l ? `Çekim Yarıçapı: ${magR(l)}` : 'Aygıt Yok' },
+  { id: 'slow', name: 'Zaman Durgunluğu', short: 'Chrono', color: '#9c7ad6', desc: 'Basılı tutulduğunda zaman akışını %50 yavaşlatan göksel dinginlik enerjisi.', val: l => `${slowCap(l).toFixed(1)} sn Dinginlik` }
+];
+
+/* ================= ETİKSEL / AKUSTİK GÖKSEL SES MOTORU =================
+   Sert 8-bit testere/kare dalgalar yerine; kristal çanlar, Tibet kasesi ve yumuşak akorlar.
+*/
+let actx = null;
+function ac() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function celestialBell(f, d, v = 0.12, delay = 0) {
+  if (!save.sound) return; const a = ac(); if (!a) return;
+  const t = a.currentTime + delay;
+  // Temel ve overtoneler ile zil/kristal tınısı
+  [1, 2.76, 5.4].forEach((ratio, idx) => {
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(f * ratio, t);
+    const vol = v / (idx * 1.8 + 1);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d * (1 / (idx * 0.5 + 1)));
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + 0.05);
+  });
+}
+function softBowl(f, d, v = 0.08) {
+  if (!save.sound) return; const a = ac(); if (!a) return;
+  const t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + d + 0.1);
+}
+const SFX = {
+  launch: () => celestialBell(392, 0.35, 0.08), // G4
+  capture: () => { celestialBell(523.25, 0.4, 0.1); celestialBell(659.25, 0.5, 0.08, 0.06); }, // C5 - E5
+  perfect: c => [523.25, 587.33, 659.25, 783.99, 880].slice(0, Math.min(5, 2 + c)).forEach((f, i) => celestialBell(f, 0.6, 0.07, i * 0.06)),
+  crystal: () => celestialBell(1046.5, 0.28, 0.09), // C6 starlight (Standart 10 Toz)
+  crystalLarge: () => { celestialBell(1046.5, 0.35, 0.1); celestialBell(1318.5, 0.45, 0.09, 0.06); }, // E6 harmonic (Büyük 20 Toz)
+  crystalRare: () => [783.99, 1046.5, 1318.5, 1567.98].forEach((f, i) => celestialBell(f, 0.65, 0.08, i * 0.05)), // G5-C6-E6-G6 akor (Nadir 50 Toz)
+  explode: () => { softBowl(90, 0.8, 0.18); celestialBell(160, 0.6, 0.12); },
+  shield: () => { celestialBell(440, 0.6, 0.14); softBowl(220, 0.5, 0.1); },
+  buy: () => { celestialBell(659.25, 0.3, 0.1); celestialBell(880, 0.45, 0.1, 0.08); },
+  slow: () => softBowl(196, 0.9, 0.1),
+  risk: () => celestialBell(880, 0.4, 0.08),
+  level: () => [440, 554.37, 659.25].forEach((f, i) => celestialBell(f, 0.5, 0.06, i * 0.08)),
+  click: () => celestialBell(800, 0.06, 0.04),
+  nudge: () => celestialBell(784, 0.15, 0.05), // G5 zarif mikro itici çanı
+  deny: () => softBowl(130, 0.25, 0.08)
+};
+
+/* ================= KANVAS & GÖKSEL ÇİZİM ================= */
+const canvas = $('game'), ctx = canvas.getContext('2d');
+let scale = 1;
+function resize() {
+  const r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(1, Math.round(r.width * dpr)); canvas.height = Math.max(1, Math.round(r.height * dpr));
+  scale = canvas.width / VW;
+}
+window.addEventListener('resize', resize);
+
+/* Göksel Takımyıldızlar & Yıldız Katmanları */
+const STARS = Array.from({ length: 90 }, () => ({
+  x: Math.random() * VW, y: Math.random() * VH, r: rand(0.5, 1.8), tw: Math.random() * TAU,
+  c: Math.random() < 0.3 ? '#ebd08d' : (Math.random() < 0.2 ? '#6ec5b3' : '#faf6ed')
+}));
+// Takımyıldız çizgileri çiftleri
+const CONSTELLATIONS = [];
+for (let i = 0; i < 28; i++) {
+  const a = Math.floor(Math.random() * STARS.length), b = Math.floor(Math.random() * STARS.length);
+  if (Math.hypot(STARS[a].x - STARS[b].x, STARS[a].y - STARS[b].y) < 95) CONSTELLATIONS.push([a, b]);
+}
+/* ================= ARKA PLAN UZAY BULUTLARI, NEBULALAR & SÜPERNOVALAR ================= */
+const COSMIC_CLOUDS = [
+  { x: 110, y: 160, r: 260, c: '235,208,141', lobes: [{ ox: -40, oy: 25, r: 180 }, { ox: 50, oy: -30, r: 150 }] },
+  { x: 360, y: 520, r: 280, c: '110,197,179', lobes: [{ ox: 35, oy: 40, r: 190 }, { ox: -45, oy: -20, r: 170 }] },
+  { x: 190, y: 920, r: 270, c: '156,122,214', lobes: [{ ox: -30, oy: -35, r: 180 }, { ox: 40, oy: 30, r: 160 }] },
+  { x: 80, y: 1320, r: 250, c: '229,123,136', lobes: [{ ox: 45, oy: -25, r: 170 }, { ox: -30, oy: 35, r: 150 }] },
+  { x: 340, y: 1720, r: 290, c: '96,165,250', lobes: [{ ox: -50, oy: 30, r: 190 }, { ox: 35, oy: -40, r: 170 }] },
+  { x: 140, y: 2120, r: 260, c: '245,158,11', lobes: [{ ox: 40, oy: 30, r: 180 }, { ox: -35, oy: -30, r: 160 }] },
+  { x: 320, y: 2520, r: 270, c: '167,243,208', lobes: [{ ox: -30, oy: 40, r: 170 }, { ox: 45, oy: -25, r: 150 }] }
+];
+const CLOUD_PERIOD = 2800;
+
+// Narin, derin uzay süpernova kalıntıları (abartmayacak, estetik kozmik anıtlar)
+const SUPERNOVAE = [
+  { 
+    x: 345, y: 380, r: 65, c: '#ebd08d', sec: '#6ec5b3', name: 'NOVA AURORA',
+    desc: 'Kozmik Şok Dalgası', period: 3200
+  },
+  { 
+    x: 85, y: 1420, r: 80, c: '#9c7ad6', sec: '#38bdf8', name: 'VELA PEÇESİ',
+    desc: 'İyonize Gaz Tülü', period: 3200
+  },
+  { 
+    x: 355, y: 2480, r: 72, c: '#e57b88', sec: '#ffd700', name: 'KIZIL NOVA',
+    desc: 'Akkor Kalıntı', period: 3200
+  }
+];
+const SUPERNOVA_PERIOD = 3200;
+
+/* ================= OYUN DURUM MOTORU ================= */
+let state = 'menu', G = null;
+let holding = false, slowArmed = false, inputLock = 0;
+let rightHolding = false, keyLeft = false, keyRight = false;
+const mousePos = { x: VW / 2, y: VH / 2, wx: VW / 2, wy: 0, has: false };
+
+function updateMousePos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX - rect.left) / (rect.width / VW);
+  const cy = (e.clientY - rect.top) / (rect.height / VH);
+  mousePos.x = clamp(cx, 0, VW);
+  mousePos.y = clamp(cy, 0, VH);
+  mousePos.wx = mousePos.x;
+  mousePos.wy = mousePos.y + (G ? G.camY : 0);
+  mousePos.has = true;
+}
+
+function applyRightNudge(targetWx, targetWy, maxAngle = 0.065) {
+  if (!G || G.ship.dead || G.ship.mode !== 'fly') return;
+  const s = G.ship;
+  const curAngle = Math.atan2(s.vy, s.vx);
+  const targetAngle = Math.atan2(targetWy - s.y, targetWx - s.x);
+  let diff = (targetAngle - curAngle + Math.PI * 3) % TAU - Math.PI;
+  if (Math.abs(diff) < 0.01) return;
+  
+  // Çok çok az anlık açısal itki (~3.7 derece)
+  const turn = Math.sign(diff) * Math.min(Math.abs(diff), maxAngle);
+  const newAngle = curAngle + turn;
+  const spd = Math.hypot(s.vx, s.vy);
+  s.vx = Math.cos(newAngle) * spd;
+  s.vy = Math.sin(newAngle) * spd;
+  s.heading = newAngle;
+
+  // Yan mikro itici parçacık kıvılcımları
+  const flank = curAngle + (turn > 0 ? -Math.PI / 2 : Math.PI / 2);
+  for (let i = 0; i < 4; i++) {
+    G.particles.push({
+      x: s.x + Math.cos(flank) * 6,
+      y: s.y + Math.sin(flank) * 6,
+      vx: Math.cos(flank) * rand(40, 80) + rand(-10, 10),
+      vy: Math.sin(flank) * rand(40, 80) + rand(-10, 10),
+      life: 0.35, max: 0.35,
+      c: i % 2 ? '#6ec5b3' : '#fff2c9', s: 1.8
+    });
+  }
+  SFX.nudge();
+}
+
+function makePlanet(x, y, r, idx) {
+  const cpInfo = (idx % 10 === 0 && idx <= 100 && idx > 0) ? CHECKPOINTS.find(c => c.num === idx) : null;
+  const isSuper = !cpInfo && (idx === 38 || (idx > 38 && Math.random() < 0.28));
+  const isCrystal = !cpInfo && !isSuper && (idx === 28 || (idx > 28 && Math.random() < 0.32));
+  
+  let rad = r;
+  if (cpInfo) rad = r + 8; // Görkemli yıldızlar gezegenlerden daha geniş
+  else if (isSuper) rad = r + 8;
+  else if (isCrystal) rad = r + 2;
+
+  return { 
+    x, y, r: rad, orbitR: rad + (cpInfo ? 42 : (isSuper ? 44 : 32)), idx, visited: false, pulse: 0, 
+    ringed: cpInfo || isSuper ? true : Math.random() < 0.65, 
+    tilt: rand(-0.45, 0.45), seed: Math.random(),
+    tone: cpInfo ? cpInfo.tone : (isCrystal ? '#134e4a' : (isSuper ? '#3b1d5c' : ['#2a3b5c', '#1d334a', '#342a4a', '#243a3d'][idx % 4])),
+    isCheckpoint: !!cpInfo,
+    isStar: !!cpInfo,
+    isSuper,
+    isCrystal,
+    crystalHarvested: false,
+    cpStage: cpInfo ? cpInfo.num / 10 : 0,
+    cpName: cpInfo ? cpInfo.name : (isCrystal ? 'KRİSTAL CENNETİ' : (isSuper ? 'SÜPER-KÜTLELİ DEV' : '')),
+    cpSector: cpInfo ? cpInfo.sector : '',
+    cpStarType: cpInfo ? cpInfo.starType : '',
+    cpColor: cpInfo ? cpInfo.color : (isCrystal ? '#6ec5b3' : (isSuper ? '#c084fc' : '')),
+    cpGlow: cpInfo ? cpInfo.glow : 'rgba(255, 215, 0, 0.7)',
+    cpCore: cpInfo ? cpInfo.core : '#ffffff'
+  };
+}
+
+function newGame(demo) {
+  const startCp = !demo ? (save.startCheckpoint || 0) : 0;
+  const start = makePlanet(VW / 2, 0, startCp > 0 ? 30 : 26, startCp);
+  start.visited = true;
+  const freeShield = !demo && (save.ship === 'aethelgard' || save.ship === 'archon') ? 1 : 0;
+  G = {
+    demo, planets: [start], bhs: [], belts: [], crystals: [], nebulaeField: [], pulsars: [], wormholes: [], particles: [], texts: [], trail: [],
+    camY: -VH * 0.68, shake: 0, flash: 0, time: 0, 
+    score: startCp * 120, 
+    combo: 0, maxMult: 1, money: 0, 
+    planetsCount: startCp, 
+    level: Math.floor(startCp / 10), 
+    slowMax: slowCap(save.up.slow), slow: slowCap(save.up.slow), 
+    shield: (demo ? 0 : save.up.shield) + freeShield,
+    genIndex: startCp, 
+    unlockedShown: {},
+    slowActive: false, deadTimer: 0, firstFlight: true, laser: null,
+    ship: { x: 0, y: 0, vx: 0, vy: 0, mode: 'orbit', planet: start, angle: Math.PI / 2, dir: 1, r: start.orbitR, orbitT: 0, fresh: false, usedGravity: false, dead: false, heading: 0 }
+  };
+  const s = G.ship; s.x = start.x + Math.cos(s.angle) * s.r; s.y = start.y + Math.sin(s.angle) * s.r;
+  ensureWorld();
+}
+
+/* Sonsuz Göksel Küre Üretimi & Kademeli Kozmik Kilitler */
+function genNext() {
+  const prev = G.planets[G.planets.length - 1], n = G.genIndex + 1;
+  const gap = VH * (0.28 + Math.min(0.16, n * 0.005)) * rand(0.94, 1.06);
+  const r = rand(18, 28);
+  let x = prev.x;
+  for (let i = 0; i < 20; i++) { x = rand(70, VW - 70); const dx = Math.abs(x - prev.x); if (dx >= 55 && dx <= 280) break; }
+  const p = makePlanet(x, prev.y - gap, r, n);
+  G.planets.push(p);
+
+  // Kademeli Gezegen Kilitleri (Dengeli ve Geniş Yayılmış Kozmik Seyir):
+  // 1-4. Gezegen: Sakin Tanıtım (Serene Flight, tehlikesiz huzurlu uçuş)
+  // 5+. Gezegen: Asteroid Kuşağı (Göktaşları)
+  // 14+. Gezegen: Astral Nebula (Dinginlik Toz Bulutu)
+  // 18+. Gezegen: Gravitasyonel Kara Delik (Kütleçekim Alanı & Olay Ufku)
+  // 24+. Gezegen: Pulsar Nötron Feneri (Şok Dalgası İtkisi)
+  // 28+. Gezegen: Kristal Cenneti Gezegeni (Hasat Kristalleri)
+  // 34+. Gezegen: Solucan Deliği (Uzay-Zaman Işınlanma Geçitleri)
+  // 38+. Gezegen: Süper-Kütleli Dev Gezegen (Armillary Geniş Çekim)
+  if (!p.isCheckpoint) {
+    if (n >= 34 && Math.random() < 0.22) {
+      placeWormhole(prev, p);
+    } else if (n >= 24 && Math.random() < 0.25) {
+      placePulsar(prev, p);
+    } else if (n >= 18 && Math.random() < 0.28) {
+      placeBH(prev, p);
+    } else if (n >= 14 && Math.random() < 0.35) {
+      placeNebula(prev, p);
+    } else if (n >= 5 && Math.random() < 0.38) {
+      placeBelt(prev, p, n);
+    }
+  }
+
+  if (p.isCheckpoint) {
+    for (let k = 0; k < 3; k++) {
+      const ang = (k - 1) * 0.35;
+      G.crystals.push({
+        x: clamp((prev.x + p.x) / 2 + Math.sin(ang) * 45, 30, VW - 30),
+        y: (prev.y + p.y) / 2 + (k - 1) * 35,
+        ph: Math.random() * TAU,
+        tier: k === 1 ? 3 : 2,
+        val: k === 1 ? 50 : 20,
+        taken: false
+      });
+    }
+  } else if (Math.random() < 0.75) {
+    placeCrystals(prev, p);
+  }
+  G.genIndex = n;
+}
+
+function placeBH(a, b) {
+  const midY = (a.y + b.y) / 2, midX = (a.x + b.x) / 2;
+  for (let t = 0; t < 10; t++) {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const x = clamp(midX + side * rand(85, 135), 45, VW - 45);
+    const y = midY + rand(-25, 25);
+    if (Math.abs(x - midX) < 70) continue;
+    if (Math.hypot(x - a.x, y - a.y) < a.orbitR + 55 || Math.hypot(x - b.x, y - b.y) < b.orbitR + 55) continue;
+    G.bhs.push({ x, y, r: BH_CORE, infl: BH_INFL, rot: Math.random() * TAU });
+    if (Math.random() < 0.6) {
+      const ang = Math.atan2(midY - y, midX - x);
+      for (let k = 0; k < 2; k++) {
+        const cx = x + Math.cos(ang + (k - 0.5) * 0.5) * (50 + k * 4);
+        const cy = y + Math.sin(ang + (k - 0.5) * 0.5) * 50;
+        const r = Math.random();
+        let tier = 1, val = 10;
+        if (r < 0.3) { tier = 3; val = 50; }
+        else if (r < 0.7) { tier = 2; val = 20; }
+        G.crystals.push({ x: cx, y: cy, ph: Math.random() * TAU, tier, val, taken: false });
+      }
+    }
+    return;
+  }
+}
+
+function placeBelt(a, b, n) {
+  const y = (a.y + b.y) / 2;
+  const dir = Math.random() < 0.5 ? -1 : 1;
+  const count = 1 + (n > 10 ? 1 : 0) + (Math.random() < 0.35 ? 1 : 0);
+  const span = VW + 80, off = Math.random() * span;
+  const rocks = [];
+  for (let i = 0; i < count; i++) {
+    const r = rand(10, 15), verts = [];
+    const nv = 7 + (Math.random() * 3 | 0);
+    for (let k = 0; k < nv; k++) verts.push(r * rand(0.75, 1.15));
+    rocks.push({ x: ((off + i * span / count) % span) - 40, r, verts, rot: Math.random() * TAU, spin: rand(-1.6, 1.6), alive: true });
+  }
+  G.belts.push({ y, speed: rand(65, 100) * dir, rocks });
+}
+
+function placeNebula(a, b) {
+  const midX = (a.x + b.x) / 2 + rand(-35, 35);
+  const midY = (a.y + b.y) / 2 + rand(-25, 25);
+  const r = rand(45, 62);
+  const col = ['110,197,179', '156,122,214', '235,208,141'][Math.random() * 3 | 0];
+  G.nebulaeField.push({ x: midX, y: midY, r, c: col, visited: false, rot: Math.random() * TAU });
+}
+
+function placePulsar(a, b) {
+  const midY = (a.y + b.y) / 2, midX = (a.x + b.x) / 2;
+  const side = Math.random() < 0.5 ? -1 : 1;
+  const x = clamp(midX + side * rand(85, 135), 45, VW - 45);
+  const y = midY + rand(-20, 20);
+  if (Math.hypot(x - a.x, y - a.y) < a.orbitR + 45 || Math.hypot(x - b.x, y - b.y) < b.orbitR + 45) return;
+  G.pulsars.push({
+    x, y, r: 12, waveR: 0, waveMax: 120, rot: Math.random() * TAU, surged: false
+  });
+}
+
+function placeWormhole(a, b) {
+  const inX = clamp(a.x + rand(-45, 45), 45, VW - 45);
+  const inY = a.y - rand(70, 105);
+  const outX = clamp(b.x + rand(-35, 35), 45, VW - 45);
+  const outY = b.y + rand(55, 85);
+  if (Math.hypot(inX - a.x, inY - a.y) < a.orbitR + 25 || Math.hypot(outX - b.x, outY - b.y) < b.orbitR + 25) return;
+  G.wormholes.push({
+    inX, inY, outX, outY, r: 16, rot: 0, cd: 0, targetP: b
+  });
+}
+
+function placeCrystals(a, b) {
+  const t = rand(0.35, 0.65), cnt = 1 + (Math.random() * 3 | 0);
+  const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L;
+  const off = rand(-55, 55);
+  for (let i = 0; i < cnt; i++) {
+    const tt = t + (i - (cnt - 1) / 2) * 0.09;
+    const cx = clamp(a.x + dx * tt + nx * off, 25, VW - 25);
+    const cy = a.y + dy * tt + ny * off;
+    const r = Math.random();
+    let tier = 1, val = 10;
+    if (r < 0.08) { tier = 3; val = 50; }
+    else if (r < 0.32) { tier = 2; val = 20; }
+    G.crystals.push({ x: cx, y: cy, ph: Math.random() * TAU, tier, val, taken: false });
+  }
+}
+
+function ensureWorld() {
+  while (G.planets[G.planets.length - 1].y - G.camY > -350) genNext();
+  const lim = G.camY + VH + 250, s = G.ship;
+  G.planets = G.planets.filter(p => p.y < lim || p === s.planet);
+  G.bhs = G.bhs.filter(b => b.y < lim);
+  G.belts = G.belts.filter(b => b.y < lim);
+  G.crystals = G.crystals.filter(c => c.y < lim && !c.taken);
+  G.nebulaeField = (G.nebulaeField || []).filter(n => n.y < lim);
+  G.pulsars = (G.pulsars || []).filter(p => p.y < lim);
+  G.wormholes = (G.wormholes || []).filter(w => w.outY < lim);
+}
+
+/* Kütleçekimi & Bükülme Fiziği */
+function bend(x, y, vx, vy, dt, spd) {
+  let used = false;
+  for (const b of G.bhs) {
+    const dx = b.x - x, dy = b.y - y, d2 = dx * dx + dy * dy;
+    if (d2 > b.infl * b.infl) continue;
+    const d = Math.sqrt(d2), f = BH_GM / Math.max(d2, 400) * (1 - d / b.infl);
+    vx += dx / d * f * dt; vy += dy / d * f * dt;
+    if (d < b.infl * 0.75) used = true;
+  }
+  const m = Math.hypot(vx, vy) || 1;
+  return [vx / m * spd, vy / m * spd, used];
+}
+
+function launchInfo() {
+  const s = G.ship;
+  // 1 tam tur dolmadan (orbitT < 1 / orbitSpeed) fırlamak Kusursuz Sıçrama sayılır!
+  const fullRevTime = (1 / orbitSpeed()) * 0.95;
+  const perfect = s.fresh && s.orbitT < fullRevTime;
+  const combo = perfect ? G.combo + 1 : 0;
+  const spd = flightSpd() * (1 + 0.07 * Math.min(combo, 5));
+  return { perfect, combo, spd };
+}
+
+function predict(maxLen) {
+  const s = G.ship, info = launchInfo();
+  let vx = -Math.sin(s.angle) * s.dir * info.spd, vy = Math.cos(s.angle) * s.dir * info.spd;
+  let x = s.x, y = s.y, len = 0, i = 0;
+  const pts = [[x, y]], step = 1 / 90;
+  let target = null, danger = false;
+  while (len < maxLen) {
+    [vx, vy] = bend(x, y, vx, vy, step, info.spd);
+    x += vx * step; y += vy * step; len += info.spd * step;
+    if (++i % 2 === 0) pts.push([x, y]);
+    let hit = false;
+    for (const p of G.planets) if (p !== s.planet && Math.hypot(x - p.x, y - p.y) < p.orbitR + 6) { target = p; hit = true; break; }
+    if (hit) break;
+    for (const b of G.bhs) if (Math.hypot(x - b.x, y - b.y) < b.r + SHIP_R) { danger = true; hit = true; break; }
+    if (hit) break;
+    for (const pul of (G.pulsars || [])) if (Math.hypot(x - pul.x, y - pul.y) < pul.r + SHIP_R) { danger = true; hit = true; break; }
+    if (hit) break;
+  }
+  pts.push([x, y]);
+  return { pts, target, danger, len };
+}
+
+/* ================= ASTRAL PARÇACIKLAR ================= */
+function burst(x, y, n, colors, spd = 160, life = 0.9, size = 3) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU, v = rand(0.2, 1) * spd;
+    G.particles.push({ 
+      x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, 
+      life: rand(0.5, 1) * life, max: life, 
+      c: colors[i % colors.length], s: rand(0.6, 1) * size 
+    });
+  }
+}
+function floatText(x, y, text, color = '#ebd08d', size = 22) { G.texts.push({ x, y, text, color, size, life: 1.2 }); }
+
+/* ================= AKSİYONLAR ================= */
+function launch() {
+  const s = G.ship, info = launchInfo();
+  if (info.perfect) {
+    G.combo = info.combo;
+    const mult = 1 + G.combo; G.maxMult = Math.max(G.maxMult, mult);
+    floatText(s.x, s.y - 24, `✦ KUSURSUZ x${mult} ✦`, '#ebd08d', 22);
+    SFX.perfect(Math.min(G.combo, 5)); popMult();
+  } else if (G.combo) { G.combo = 0; popMult(); }
+  
+  s.vx = -Math.sin(s.angle) * s.dir * info.spd; s.vy = Math.cos(s.angle) * s.dir * info.spd;
+  s.spd = info.spd; s.mode = 'fly'; s.usedGravity = false; s.fresh = false; s.flyT = 0;
+  slowArmed = false;
+  burst(s.x, s.y, 14, ['#ebd08d', '#fff7db', '#cfa24d'], 130, 0.5, 2.5);
+  SFX.launch();
+  
+  if (!G.demo && G.firstFlight && save.runs <= 3) showHint('SOL BASILI: DİNGİNLİK • SAĞ TIK: MİKRO DÜMEN');
+  else hideHint();
+}
+
+function capture(p) {
+  const s = G.ship;
+  const rx = s.x - p.x, ry = s.y - p.y;
+  const cross = rx * s.vy - ry * s.vx;
+  s.dir = cross >= 0 ? 1 : -1; s.angle = Math.atan2(ry, rx); s.r = Math.hypot(rx, ry);
+  s.mode = 'orbit'; s.planet = p; s.orbitT = 0; s.fresh = false;
+  slowArmed = false; p.pulse = 1;
+  if (G.firstFlight) { G.firstFlight = false; hideHint(); }
+  if (!p.visited) {
+    p.visited = true; s.fresh = true; G.planetsCount++;
+    const mult = 1 + G.combo, pts = 10 * mult;
+    G.score += pts;
+    floatText(p.x, p.y - p.orbitR - 10, `+${pts}`, mult > 1 ? '#ebd08d' : '#ffffff', mult > 1 ? 26 : 22);
+    if (s.usedGravity) { G.score += 25; floatText(p.x, p.y - p.orbitR - 38, 'ASTRAL ÇEKİM +25', '#9c7ad6', 18); SFX.risk(); }
+    G.slow = Math.min(G.slowMax, G.slow + 0.35);
+    burst(s.x, s.y, 18, ['#ebd08d', '#fff7db', '#6ec5b3'], 150, 0.65, 2.8);
+    
+    // Kristal Gezegen Hasadı
+    if (p.isCrystal && !p.crystalHarvested) {
+      p.crystalHarvested = true;
+      G.money += 45; G.score += 45;
+      floatText(p.x, p.y - p.orbitR - 38, '★ KRİSTAL CENNETİ: +45 TOZ ★', '#6ec5b3', 22);
+      SFX.crystalRare();
+      burst(p.x, p.y, 35, ['#6ec5b3', '#a7f3d0', '#ffd700', '#ffffff'], 220, 1.0, 3.5);
+    }
+
+    // Yeni Kozmik Fenomen Keşfi Bildirimleri (Oyun boyu ilk kez açıldığında göster)
+    if (!G.demo) {
+      if (p.idx === 5 && !G.unlockedShown[5]) {
+        G.unlockedShown[5] = true;
+        showHint('✦ YENİ: ASTEROİD KUŞAĞI AÇILDI (ZAMANLAMAYLA GEÇ) ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ ASTEROİD KUŞAĞI BÖLGESİ ✦', '#ffd700', 20);
+      } else if (p.idx === 14 && !G.unlockedShown[14]) {
+        G.unlockedShown[14] = true;
+        showHint('✦ YENİ: ASTRAL NEBULA AÇILDI (DİNGİNLİK YENİLER) ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ ASTRAL NEBULA BULUTU ✦', '#6ec5b3', 20);
+      } else if (p.idx === 18 && !G.unlockedShown[18]) {
+        G.unlockedShown[18] = true;
+        showHint('✦ UYARI: GRAVİTASYONEL KARA DELİK AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ KARA DELİK GRAVİTASYONU ✦', '#e57b88', 20);
+      } else if (p.idx === 24 && !G.unlockedShown[24]) {
+        G.unlockedShown[24] = true;
+        showHint('✦ YENİ: PULSAR NÖTRON FENERİ AÇILDI (ŞOK DALGASI İTKİSİ) ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ PULSAR ŞOK DALGASI ✦', '#ffd700', 20);
+      } else if (p.idx === 28 && !G.unlockedShown[28]) {
+        G.unlockedShown[28] = true;
+        showHint('✦ YENİ: KRİSTAL CENNETİ GEZEGENLERİ AÇILDI (+50 TOZ) ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ KRİSTAL CENNETİ ✦', '#6ec5b3', 20);
+      } else if (p.idx === 34 && !G.unlockedShown[34]) {
+        G.unlockedShown[34] = true;
+        showHint('✦ YENİ: SOLUCAN DELİĞİ GEÇİDİ AÇILDI (IŞINLANMA) ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ UZAY BÜKÜM GEÇİDİ ✦', '#9c7ad6', 20);
+      } else if (p.idx === 38 && !G.unlockedShown[38]) {
+        G.unlockedShown[38] = true;
+        showHint('✦ YENİ: SÜPER-KÜTLELİ DEV GEZEGENLER AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ SÜPER DEV GEZEGEN ✦', '#c084fc', 20);
+      } else if (p.idx === 45 && !G.unlockedShown[45]) {
+        G.unlockedShown[45] = true;
+        showHint('✦ YENİ: PLAZMA JEOD KUŞAĞI AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ JEOD FIRTINASI ✦', '#f59e0b', 20);
+      } else if (p.idx === 55 && !G.unlockedShown[55]) {
+        G.unlockedShown[55] = true;
+        showHint('✦ UYARI: İKİLİ SİNGULARİTE ALANI AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ İKİLİ SİNGULARİTE ✦', '#38bdf8', 20);
+      } else if (p.idx === 65 && !G.unlockedShown[65]) {
+        G.unlockedShown[65] = true;
+        showHint('✦ YENİ: HİPER BÜKÜM KORİDORU AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ HİPER BÜKÜM ✦', '#38bdf8', 20);
+      } else if (p.idx === 75 && !G.unlockedShown[75]) {
+        G.unlockedShown[75] = true;
+        showHint('✦ UYARI: KAOTİK MANYETİK FIRTINA ALANI AÇILDI ✦');
+        floatText(p.x, p.y - p.orbitR - 45, '✦ MANYETİK FIRTINA ✦', '#f43f5e', 20);
+      }
+    }
+
+    // Göksel Kontrol Yıldızı Ulaşımı Kontrolü
+    if (p.isCheckpoint && !G.demo) {
+      const prevMax = save.maxCheckpoint || 0;
+      if (p.idx > prevMax) {
+        save.maxCheckpoint = p.idx;
+        persist();
+      }
+      G.flash = 0.9;
+      G.shake = 14;
+      const starColors = [p.cpColor || '#ffd700', '#ffffff', '#fff2c9', p.cpColor || '#ffd700', '#ffd700'];
+      burst(p.x, p.y, 55, starColors, 260, 1.4, 4.2);
+      floatText(p.x, p.y - p.orbitR - 36, `✦ GÖKSEL YILDIZ: ${p.cpName.toUpperCase()} ✦`, p.cpColor || '#ffd700', 22);
+      floatText(p.x, p.y - p.orbitR - 66, `+100 TOZ & YILDIZ IŞIĞI`, '#fff2c9', 18);
+      G.money += 100;
+      if (G.shield <= 0) {
+        G.shield = 1;
+        floatText(p.x, p.y - p.orbitR - 92, 'KALKAN YENİLENDİ!', '#6ec5b3', 18);
+      }
+      SFX.level();
+    } else if (G.planetsCount % 10 === 0) {
+      SFX.level();
+    }
+  }
+  SFX.capture();
+}
+
+function failure(kind, obj) {
+  const s = G.ship;
+  if (G.shield > 0) {
+    G.shield--; G.flash = 0.5; G.shake = 8; SFX.shield();
+    burst(s.x, s.y, 25, ['#6ec5b3', '#fff7db'], 200, 0.65, 3);
+    if (kind === 'rock') { obj.alive = false; burst(s.x, s.y, 16, ['#e57b88', '#fff'], 160, 0.7, 3); floatText(s.x, s.y - 20, 'KALKAN KORUDU!', '#6ec5b3', 22); return; }
+    if (kind === 'pulsar') { floatText(s.x, s.y - 20, 'KALKAN DARBEYİ EMDİ!', '#6ec5b3', 22); }
+    const p = s.planet; // Son güvenli gezegene dönüş
+    s.mode = 'orbit'; s.r = p.orbitR + 20; s.angle = Math.random() * TAU; s.orbitT = 0; s.fresh = false; G.combo = 0; popMult();
+    s.x = p.x + Math.cos(s.angle) * s.r; s.y = p.y + Math.sin(s.angle) * s.r; G.trail.length = 0;
+    floatText(p.x, p.y - p.orbitR - 20, 'GÖK KÜRESİ IŞINLADI!', '#6ec5b3', 20);
+    return;
+  }
+  die();
+}
+
+function die() {
+  const s = G.ship; s.dead = true; G.slowActive = false; holding = false; slowArmed = false;
+  G.shake = 20; G.flash = 1;
+  burst(s.x, s.y, 70, ['#ebd08d', '#fff7db', '#e57b88', '#9c7ad6'], 320, 1.4, 3.8);
+  SFX.explode();
+  if (G.demo) { G.deadTimer = 1.0; return; }
+  state = 'dying'; G.deadTimer = 1.2;
+  $('slowVignette').classList.remove('on'); hideHint();
+}
+
+/* ================= OYUN DÖNGÜSÜ (UPDATE) ================= */
+function update(dt) {
+  if (!G) return;
+  const s = G.ship;
+  const playing = state === 'play' || G.demo;
+
+  // Zaman Durgunluğu (Slo-Mo)
+  const wantSlow = !G.demo && state === 'play' && !s.dead && s.mode === 'fly' && holding && slowArmed && G.slow > 0;
+  if (wantSlow && !G.slowActive) SFX.slow();
+  G.slowActive = wantSlow;
+  if (G.slowActive) {
+    const drain = dt * (save.ship === 'chrono' ? 0.65 : 1);
+    G.slow = Math.max(0, G.slow - drain);
+  } else if (s.mode === 'orbit' && !s.dead) {
+    G.slow = Math.min(G.slowMax, G.slow + slowRegen(save.up.slow) * dt);
+  }
+  const d = dt * (G.slowActive ? 0.5 : 1);
+  G.time += d;
+
+  // Kamera Takibi
+  const camTarget = s.planet.y - VH * 0.68;
+  G.camY += (camTarget - G.camY) * Math.min(1, dt * 3);
+  ensureWorld();
+
+  // Göktaşları (Kozmik Geodlar)
+  const rockMul = 1 + Math.min(0.6, G.planetsCount * 0.015);
+  for (const b of G.belts) for (const r of b.rocks) {
+    r.x += b.speed * rockMul * d; r.rot += r.spin * d;
+    if (r.x > VW + 40) r.x -= VW + 80; else if (r.x < -40) r.x += VW + 80;
+  }
+  for (const b of G.bhs) b.rot += d * 1.2;
+  for (const p of G.planets) if (p.pulse > 0) p.pulse = Math.max(0, p.pulse - d * 1.8);
+  for (const pul of (G.pulsars || [])) {
+    pul.rot += d * 3.5;
+    pul.waveR += d * 65;
+    if (pul.waveR > pul.waveMax) { pul.waveR = 0; pul.surged = false; }
+  }
+  for (const w of (G.wormholes || [])) {
+    w.rot += d * 2.2;
+    if (w.cd > 0) w.cd -= d;
+  }
+  for (const n of (G.nebulaeField || [])) n.rot += d * 0.3;
+
+  if (!s.dead && playing) {
+    if (s.mode === 'orbit') {
+      const p = s.planet;
+      // Kademeli yumuşak hız formülü
+      s.angle += s.dir * TAU * orbitSpeed() * d;
+      s.r += (p.orbitR - s.r) * Math.min(1, d * 8);
+      s.x = p.x + Math.cos(s.angle) * s.r; s.y = p.y + Math.sin(s.angle) * s.r;
+      s.heading = s.angle + s.dir * Math.PI / 2;
+      s.orbitT += d;
+      G.laser = predict(G.demo ? 650 : laserLen(save.up.laser));
+      if (G.demo && s.orbitT > 0.4 && G.laser.target && !G.laser.target.visited && !G.laser.danger) launch();
+    } else {
+      G.laser = null; s.flyT += d;
+      const [vx, vy, used] = bend(s.x, s.y, s.vx, s.vy, d, s.spd);
+      s.vx = vx; s.vy = vy; if (used) s.usedGravity = true;
+
+      // Mikro Dümen (Sağ Tık / A-D ile Çok Çok Az Yön Değiştirme)
+      let steerDir = 0;
+      if (keyLeft) steerDir -= 1;
+      if (keyRight) steerDir += 1;
+      if (mousePos.has) mousePos.wy = mousePos.y + G.camY;
+      if (rightHolding && mousePos.has) {
+        const curAngle = Math.atan2(s.vy, s.vx);
+        const targetAngle = Math.atan2(mousePos.wy - s.y, mousePos.wx - s.x);
+        let diff = (targetAngle - curAngle + Math.PI * 3) % TAU - Math.PI;
+        if (Math.abs(diff) > 0.02) steerDir += Math.sign(diff);
+      }
+      if (steerDir !== 0) {
+        // Çok çok az ve hassas dönüş: Aethelgard ve Astraea için çeviklik çarpanı
+        const agility = save.ship === 'aethelgard' ? 1.5 : (save.ship === 'astraea' ? 1.2 : 1);
+        const turnRate = 0.72 * agility * d * Math.sign(steerDir);
+        const curAngle = Math.atan2(s.vy, s.vx);
+        const newAngle = curAngle + turnRate;
+        const curSpd = Math.hypot(s.vx, s.vy);
+        s.vx = Math.cos(newAngle) * curSpd;
+        s.vy = Math.sin(newAngle) * curSpd;
+        if (Math.random() < 0.35) {
+          const flank = curAngle + (steerDir > 0 ? -Math.PI / 2 : Math.PI / 2);
+          const pCol = save.ship === 'solaris' ? '#f59e0b' : (save.ship === 'chrono' ? '#9c7ad6' : '#6ec5b3');
+          G.particles.push({
+            x: s.x + Math.cos(flank) * 5,
+            y: s.y + Math.sin(flank) * 5,
+            vx: Math.cos(flank) * 45 + rand(-10, 10),
+            vy: Math.sin(flank) * 45 + rand(-10, 10),
+            life: 0.28, max: 0.28,
+            c: pCol, s: 1.6
+          });
+        }
+      }
+
+      s.x += s.vx * d; s.y += s.vy * d; s.heading = Math.atan2(s.vy, s.vx);
+
+      // 1. Astral Nebula Etkileşimi (Yıldız Tozu Bulutunda Süzülme)
+      for (const neb of (G.nebulaeField || [])) {
+        if (!neb.visited && Math.hypot(s.x - neb.x, s.y - neb.y) < neb.r) {
+          neb.visited = true;
+          G.slow = Math.min(G.slowMax, G.slow + 0.85);
+          G.score += 15;
+          floatText(s.x, s.y - 18, '✦ ASTRAL NEBULA +15 ✦', '#6ec5b3', 18);
+          SFX.nudge();
+          burst(s.x, s.y, 16, ['#6ec5b3', '#a7f3d0', '#ebd08d', '#ffffff'], 140, 0.65, 3);
+        }
+      }
+
+      // 2. Pulsar Yıldızı & Şok Dalgası Etkileşimi
+      for (const pul of (G.pulsars || [])) {
+        const dist = Math.hypot(s.x - pul.x, s.y - pul.y);
+        if (dist < pul.r + SHIP_R * 0.7) { failure('pulsar', pul); break; }
+        if (Math.abs(dist - pul.waveR) < 16) {
+          const nx = (s.x - pul.x) / dist, ny = (s.y - pul.y) / dist;
+          const dot = (s.vx * nx + s.vy * ny) / (s.spd || 1);
+          if (dot > 0.25 && !pul.surged) {
+            pul.surged = true;
+            G.score += 25;
+            s.vx *= 1.18; s.vy *= 1.18; s.spd *= 1.18;
+            floatText(s.x, s.y - 22, '⚡ PULSAR İTKİSİ +25 ⚡', '#ffd700', 20);
+            SFX.launch();
+            burst(s.x, s.y, 16, ['#ffd700', '#fff2c9', '#ffffff'], 180, 0.55, 3);
+          } else if (dot < -0.2) {
+            s.x += nx * 45 * d; s.y += ny * 45 * d;
+          }
+        }
+      }
+
+      // 3. Solucan Deliği Geçidi (Wormhole Portal Warp)
+      for (const w of (G.wormholes || [])) {
+        if (w.cd <= 0 && Math.hypot(s.x - w.inX, s.y - w.inY) < w.r + SHIP_R) {
+          w.cd = 2.5;
+          s.x = w.outX; s.y = w.outY;
+          const tgt = w.targetP || G.planets.find(p => p.y < w.outY);
+          if (tgt) {
+            const dx = tgt.x - w.outX, dy = tgt.y - w.outY, L = Math.hypot(dx, dy) || 1;
+            s.vx = (dx / L) * s.spd * 1.12; s.vy = (dy / L) * s.spd * 1.12;
+          }
+          s.heading = Math.atan2(s.vy, s.vx);
+          G.flash = 0.6; G.shake = 10;
+          G.score += 40; G.money += 20;
+          floatText(w.outX, w.outY - 24, '★ SOLUCAN DELİĞİ ATLAMA +40 ★', '#9c7ad6', 22);
+          SFX.capture();
+          burst(w.inX, w.inY, 22, ['#9c7ad6', '#e9d5ff', '#ffffff'], 190, 0.7, 3.2);
+          burst(w.outX, w.outY, 28, ['#9c7ad6', '#ffd700', '#6ec5b3', '#ffffff'], 240, 0.85, 3.8);
+        }
+      }
+
+      // Gezegeni Yakalama
+      for (const p of G.planets) if (p !== s.planet && Math.hypot(s.x - p.x, s.y - p.y) < p.orbitR + 6) { capture(p); break; }
+      // Kara Delik Olay Ufku
+      if (s.mode === 'fly') for (const b of G.bhs) if (Math.hypot(s.x - b.x, s.y - b.y) < b.r + SHIP_R * 0.6) { failure('bh'); break; }
+      // Sınır Kontrolü
+      const sy = s.y - G.camY;
+      if (s.mode === 'fly' && !s.dead && (s.x < -18 || s.x > VW + 18 || sy < -18 || sy > VH + 18)) failure('out');
+    }
+
+    // Çarpışma Kontrolü
+    if (!s.dead) for (const b of G.belts) for (const r of b.rocks) if (r.alive && Math.hypot(s.x - r.x, s.y - b.y) < r.r + SHIP_R - 2) { failure('rock', r); }
+
+    // Yıldız Tozu Prizması Çekimi (Dengelenmiş hassas çekim alanı)
+    let mr = G.demo ? 0 : magR(save.up.magnet);
+    if (!G.demo && save.ship === 'astraea') mr = mr ? mr + 20 : 25;
+    for (const c of G.crystals) {
+      if (c.taken) continue;
+      const dx = s.x - c.x, dy = s.y - c.y, dist = Math.hypot(dx, dy);
+      if (mr && dist < mr) { 
+        const pullSpd = 130 + (save.up.magnet || 0) * 20 + (save.ship === 'astraea' ? 35 : 0);
+        const pull = Math.min(dist, pullSpd * d); 
+        c.x += dx / dist * pull; c.y += dy / dist * pull; 
+      }
+      const hitR = c.tier === 3 ? 24 : (c.tier === 2 ? 20 : 18);
+      if (dist < hitR) {
+        c.taken = true; 
+        const baseVal = c.val || (c.tier === 3 ? 50 : (c.tier === 2 ? 20 : 10));
+        const cVal = save.ship === 'astraea' ? Math.round(baseVal * 1.4) : baseVal;
+        G.money += cVal; 
+        if (c.tier === 3) {
+          burst(c.x, c.y, 30, ['#ffd700', '#ebd08d', '#e57b88', '#9c7ad6', '#ffffff'], 200, 0.85, 3.8);
+          floatText(c.x, c.y - 18, `★ NADİR +${cVal} ★`, '#ffd700', 22);
+          SFX.crystalRare();
+        } else if (c.tier === 2) {
+          burst(c.x, c.y, 20, ['#6ec5b3', '#a7f3d0', '#ebd08d', '#ffffff'], 160, 0.65, 3.2);
+          floatText(c.x, c.y - 16, `✦ BÜYÜK +${cVal} ✦`, '#6ec5b3', 20);
+          SFX.crystalLarge();
+        } else {
+          burst(c.x, c.y, 12, ['#ebd08d', '#fff9c4', '#cfa24d'], 120, 0.55, 2.5);
+          floatText(c.x, c.y - 14, `+${cVal}`, '#ebd08d', 18);
+          SFX.crystal();
+        }
+      }
+    }
+
+    // Göksel İpek İzi (Stardust Trail)
+    G.trail.push([s.x, s.y]); if (G.trail.length > 32) G.trail.shift();
+  } else if (s.dead && G.trail.length) G.trail.shift();
+
+  // Parçacıklar ve Metinler
+  for (const p of G.particles) { p.x += p.vx * d; p.y += p.vy * d; p.vx *= 1 - 1.4 * d; p.vy *= 1 - 1.4 * d; p.life -= d; }
+  G.particles = G.particles.filter(p => p.life > 0);
+  for (const t of G.texts) { t.y -= 38 * d; t.life -= d; }
+  G.texts = G.texts.filter(t => t.life > 0);
+  G.shake = Math.max(0, G.shake - dt * 28);
+  G.flash = Math.max(0, G.flash - dt * 2.2);
+
+  if (s.dead) {
+    G.deadTimer -= dt;
+    if (G.deadTimer <= 0) {
+      if (G.demo) newGame(true);
+      else if (state === 'dying') showGameOver();
+    }
+  }
+  if (state === 'play' || state === 'dying') updateHUD();
+}
+
+/* ================= KANVAS ÇİZİMİ (ASTRAL SANAT TARZI) ================= */
+let bgGrad = null;
+function render() {
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (!bgGrad) {
+    bgGrad = ctx.createLinearGradient(0, 0, 0, VH);
+    bgGrad.addColorStop(0, '#060911'); bgGrad.addColorStop(0.5, '#0e1526'); bgGrad.addColorStop(1, '#17223b');
+  }
+  ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, VW, VH);
+  if (!G) return;
+  const t = G.time, cam = G.camY;
+
+  // 1. Derin Uzay Bulutları & Çok Katmanlı Nebulalar
+  for (const cl of COSMIC_CLOUDS) {
+    const cy = ((cl.y - cam * 0.05) % CLOUD_PERIOD + CLOUD_PERIOD) % CLOUD_PERIOD - 350;
+    // Ana bulut gövdesi
+    const g = ctx.createRadialGradient(cl.x, cy, 0, cl.x, cy, cl.r);
+    g.addColorStop(0, `rgba(${cl.c},0.16)`);
+    g.addColorStop(0.5, `rgba(${cl.c},0.08)`);
+    g.addColorStop(1, `rgba(${cl.c},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(cl.x - cl.r, cy - cl.r, cl.r * 2, cl.r * 2);
+
+    // Organik yan bulut kolları (lobes)
+    for (const lb of cl.lobes) {
+      const lx = cl.x + lb.ox, ly = cy + lb.oy;
+      const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, lb.r);
+      lg.addColorStop(0, `rgba(${cl.c},0.12)`);
+      lg.addColorStop(1, `rgba(${cl.c},0)`);
+      ctx.fillStyle = lg;
+      ctx.fillRect(lx - lb.r, ly - lb.r, lb.r * 2, lb.r * 2);
+    }
+  }
+
+  // 2. Abartısız, Zarif Derin Uzay Süpernovaları (Supernova Remnants)
+  for (const sn of SUPERNOVAE) {
+    const sy = ((sn.y - cam * 0.06) % SUPERNOVA_PERIOD + SUPERNOVA_PERIOD) % SUPERNOVA_PERIOD - 250;
+    if (sy < -150 || sy > VH + 150) continue;
+
+    ctx.save();
+    ctx.translate(sn.x, sy);
+
+    // Genişleyen narin filament şok halkası
+    const pulse = 1 + 0.06 * Math.sin(t * 0.9 + sn.x);
+    const curR = sn.r * pulse;
+
+    // Gaz iyonizasyon halesi
+    const sg = ctx.createRadialGradient(0, 0, curR * 0.2, 0, 0, curR);
+    sg.addColorStop(0, `${sn.c}26`);
+    sg.addColorStop(0.6, `${sn.sec}14`);
+    sg.addColorStop(1, 'transparent');
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(0, 0, curR, 0, TAU); ctx.fill();
+
+    // Narin filamenter şok dalgası halkaları
+    ctx.strokeStyle = `${sn.c}55`;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 9]);
+    ctx.lineDashOffset = -t * 6;
+    ctx.beginPath(); ctx.arc(0, 0, curR * 0.95, 0, TAU); ctx.stroke();
+
+    ctx.strokeStyle = `${sn.sec}44`;
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([5, 12]);
+    ctx.lineDashOffset = t * 4;
+    ctx.beginPath(); ctx.arc(0, 0, curR * 0.65, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Merkezde parıldayan nötron/nova çekirdeği (Twinkling Core & Diffraction Cross)
+    const tw = 0.5 + 0.5 * Math.sin(t * 3 + sn.y);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = sn.c;
+    ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(0, 0, 1.8 + tw * 0.8, 0, TAU); ctx.fill();
+
+    // Minik 4-uçlu optik kırınım çizgileri
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 0.8;
+    const clen = 10 + tw * 4;
+    ctx.beginPath();
+    ctx.moveTo(-clen, 0); ctx.lineTo(clen, 0);
+    ctx.moveTo(0, -clen); ctx.lineTo(0, clen);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // Takımyıldız Hatları
+  ctx.strokeStyle = 'rgba(235,208,141,0.06)'; ctx.lineWidth = 1;
+  for (const [a, b] of CONSTELLATIONS) {
+    const s1 = STARS[a], s2 = STARS[b];
+    const y1 = ((s1.y - cam * 0.08) % VH + VH) % VH, y2 = ((s2.y - cam * 0.08) % VH + VH) % VH;
+    if (Math.abs(y1 - y2) < 120) {
+      ctx.beginPath(); ctx.moveTo(s1.x, y1); ctx.lineTo(s2.x, y2); ctx.stroke();
+    }
+  }
+
+  // Astral Yıldızlar
+  for (const st of STARS) {
+    const y = ((st.y - cam * 0.08) % VH + VH) % VH;
+    ctx.globalAlpha = 0.35 + 0.45 * Math.sin(st.tw + t * 2);
+    ctx.fillStyle = st.c; ctx.fillRect(st.x, y, st.r, st.r);
+  }
+  ctx.globalAlpha = 1;
+
+  // Kamera
+  const sx = (Math.random() - 0.5) * G.shake, sy = (Math.random() - 0.5) * G.shake;
+  ctx.translate(sx, sy - cam);
+
+  // Göktaşı Kuşağı
+  for (const b of G.belts) {
+    ctx.strokeStyle = 'rgba(235,208,141,0.12)'; ctx.lineWidth = 1; ctx.setLineDash([4, 14]);
+    ctx.beginPath(); ctx.moveTo(0, b.y); ctx.lineTo(VW, b.y); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // 1. Astral Nebula Bulutları
+  for (const n of (G.nebulaeField || [])) drawNebulaField(n, t);
+
+  // 2. Solucan Deliği Geçitleri
+  for (const w of (G.wormholes || [])) drawWormhole(w, t);
+
+  // 3. Gravitasyonel Kara Delikler
+  for (const b of G.bhs) drawEclipse(b, t);
+
+  // 4. Pulsar Nötron Yıldızları
+  for (const pul of (G.pulsars || [])) drawPulsar(pul, t);
+
+  const target = G.laser && G.laser.target;
+  for (const p of G.planets) {
+    if (p.isCheckpoint) {
+      drawCelestialStar(p, p === G.ship.planet && G.ship.mode === 'orbit', p === target, t);
+    } else {
+      drawCelestialGlobe(p, p === G.ship.planet && G.ship.mode === 'orbit', p === target, t);
+    }
+  }
+  for (const c of G.crystals) if (!c.taken) drawAstralPrism(c, t);
+  for (const b of G.belts) for (const r of b.rocks) if (r.alive) drawGeode(r, b);
+  drawStardustTrail();
+  if (G.laser && !G.ship.dead && !G.demo) drawAstralGuide(G.laser);
+  if (!G.ship.dead) drawAstralShip(G.ship, t);
+
+  // Parçacıklar
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of G.particles) {
+    ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.c;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+
+  // Kayan Yazılar
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const tx of G.texts) {
+    ctx.globalAlpha = Math.min(1, tx.life * 2);
+    ctx.font = `700 ${tx.size}px ${FONT}`; ctx.shadowColor = tx.color; ctx.shadowBlur = 12; ctx.fillStyle = tx.color;
+    ctx.fillText(tx.text, tx.x, tx.y);
+  }
+  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (G.flash > 0) { 
+    ctx.fillStyle = G.ship.dead ? `rgba(229,123,136,${G.flash * 0.35})` : `rgba(235,208,141,${G.flash * 0.3})`; 
+    ctx.fillRect(0, 0, VW, VH); 
+  }
+}
+
+/* Astral Nebula / Yıldız Bulutu Çizimi */
+function drawNebulaField(n, t) {
+  ctx.save(); ctx.translate(n.x, n.y);
+  ctx.globalCompositeOperation = 'screen';
+  const puls = 1 + 0.08 * Math.sin(t * 2 + n.rot);
+  const grad = ctx.createRadialGradient(0, 0, n.r * 0.15, 0, 0, n.r * puls);
+  grad.addColorStop(0, `rgba(${n.c},0.35)`);
+  grad.addColorStop(0.5, `rgba(${n.c},0.16)`);
+  grad.addColorStop(1, `rgba(${n.c},0)`);
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(0, 0, n.r * puls, 0, TAU); ctx.fill();
+
+  // Nebula içindeki dönen minik göksel toz ışıltıları
+  ctx.rotate(t * 0.4 + n.rot);
+  for (let k = 0; k < 6; k++) {
+    const ang = (k * Math.PI) / 3;
+    const dist = n.r * 0.55 * (0.8 + 0.2 * Math.sin(t * 3 + k));
+    ctx.fillStyle = k % 2 === 0 ? '#ffffff' : `rgb(${n.c})`;
+    ctx.shadowColor = `rgb(${n.c})`; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(Math.cos(ang) * dist, Math.sin(ang) * dist, 1.8, 0, TAU); ctx.fill();
+  }
+  ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over'; ctx.restore();
+}
+
+/* Pulsar Yıldızı / Nötron Feneri Çizimi */
+function drawPulsar(p, t) {
+  ctx.save(); ctx.translate(p.x, p.y);
+
+  // Genişleyen şok dalgası halkası
+  if (p.waveR > 0) {
+    const alpha = Math.max(0, 1 - p.waveR / p.waveMax);
+    ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.75})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.arc(0, 0, p.waveR, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Dönen Manyetik Radyasyon Işınları (Dual Jet Beams)
+  ctx.save();
+  ctx.rotate(p.rot);
+  ctx.globalCompositeOperation = 'screen';
+  const jetGrad = ctx.createLinearGradient(-35, 0, 35, 0);
+  jetGrad.addColorStop(0, 'rgba(110,197,179,0)');
+  jetGrad.addColorStop(0.4, 'rgba(255,215,0,0.8)');
+  jetGrad.addColorStop(0.5, '#ffffff');
+  jetGrad.addColorStop(0.6, 'rgba(255,215,0,0.8)');
+  jetGrad.addColorStop(1, 'rgba(110,197,179,0)');
+  ctx.fillStyle = jetGrad;
+  ctx.fillRect(-38, -1.8, 76, 3.6);
+  ctx.restore();
+
+  // Nötron Çekirdeği (Kompakt, aşırı yoğun elmas ışıltısı)
+  ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 18;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(0, -p.r); ctx.lineTo(p.r, 0); ctx.lineTo(0, p.r); ctx.lineTo(-p.r, 0); ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+/* Solucan Deliği Geçidi (Astral Wormhole Rift Pair) */
+function drawWormhole(w, t) {
+  // İki geçit arasındaki kadim kütleçekim tünel hattı (faint filament)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(156, 122, 214, 0.22)';
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 10]);
+  ctx.lineDashOffset = -t * 16;
+  ctx.beginPath(); ctx.moveTo(w.inX, w.inY); ctx.lineTo(w.outX, w.outY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Giriş Geçidi (Gate In - Ametist Moru Vorteks)
+  ctx.save(); ctx.translate(w.inX, w.inY); ctx.rotate(-w.rot);
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 3; i++) {
+    ctx.rotate(Math.PI / 1.5);
+    ctx.strokeStyle = 'rgba(156, 122, 214, 0.7)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(0, 0, w.r - i * 3, 0, Math.PI * 1.3); ctx.stroke();
+  }
+  ctx.fillStyle = '#2e1065'; ctx.shadowColor = '#9c7ad6'; ctx.shadowBlur = 14;
+  ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Çıkış Geçidi (Gate Out - Altın / Turkuaz Fırlatma Vorteksi)
+  ctx.save(); ctx.translate(w.outX, w.outY); ctx.rotate(w.rot);
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 3; i++) {
+    ctx.rotate(Math.PI / 1.5);
+    ctx.strokeStyle = 'rgba(235, 208, 141, 0.75)'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(0, 0, w.r - i * 3, 0, Math.PI * 1.3); ctx.stroke();
+  }
+  ctx.fillStyle = '#064e3b'; ctx.shadowColor = '#6ec5b3'; ctx.shadowBlur = 14;
+  ctx.beginPath(); ctx.arc(0, 0, 6, 0, TAU); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+/* Göksel Gezegen Küresi (Armillary Celestial Sphere) */
+function drawCelestialGlobe(p, cur, isTarget, t) {
+  ctx.save(); ctx.translate(p.x, p.y);
+
+  // Yörünge Halka Çizgisi
+  ctx.strokeStyle = cur ? 'rgba(235,208,141,0.7)' : isTarget ? 'rgba(255,255,255,0.9)' : p.visited ? 'rgba(235,208,141,0.18)' : 'rgba(235,208,141,0.35)';
+  ctx.lineWidth = isTarget ? 2.2 : 1.2; ctx.setLineDash([4, 8]); ctx.lineDashOffset = -t * 12;
+  ctx.beginPath(); ctx.arc(0, 0, p.orbitR, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+  
+  if (isTarget) {
+    ctx.strokeStyle = 'rgba(235,208,141,0.25)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(0, 0, p.orbitR, 0, TAU); ctx.stroke();
+  }
+  if (p.pulse > 0) {
+    ctx.strokeStyle = `rgba(235,208,141,${p.pulse})`; ctx.lineWidth = 2.5 * p.pulse;
+    ctx.beginPath(); ctx.arc(0, 0, p.orbitR + (1 - p.pulse) * 32, 0, TAU); ctx.stroke();
+  }
+
+  // Altın Armillary Usturlap Halkası (Arka kısım)
+  const drawArmillaryBack = () => {
+    ctx.save(); ctx.rotate(p.tilt);
+    ctx.strokeStyle = 'rgba(235,208,141,0.45)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(0, 0, p.r * 1.8, p.r * 0.42, 0, Math.PI, TAU); ctx.stroke();
+    ctx.restore();
+  };
+  const drawArmillaryFront = () => {
+    ctx.save(); ctx.rotate(p.tilt);
+    ctx.strokeStyle = 'rgba(255,242,201,0.9)'; ctx.lineWidth = 2;
+    ctx.shadowColor = '#ebd08d'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.ellipse(0, 0, p.r * 1.8, p.r * 0.42, 0, 0, Math.PI); ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Küçük altın uydu pipsi
+    const satAng = t * 1.2;
+    ctx.fillStyle = '#fff2c9'; ctx.beginPath();
+    ctx.arc(Math.cos(satAng) * p.r * 1.8, Math.sin(satAng) * p.r * 0.42, 2.5, 0, TAU); ctx.fill();
+    ctx.restore();
+  };
+
+  if (p.ringed) drawArmillaryBack();
+
+  // Gezegen Gövdesi (Zarif degrade ve ay hilali gölgesi)
+  const g = ctx.createRadialGradient(-p.r * 0.4, -p.r * 0.4, p.r * 0.1, 0, 0, p.r);
+  g.addColorStop(0, '#faf6ed');
+  g.addColorStop(0.35, p.visited ? '#a6b8d4' : '#ebd08d');
+  g.addColorStop(0.75, p.tone);
+  g.addColorStop(1, '#090e1a');
+  
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.fill();
+
+  // Kristal Gezegen Özel Efekti: Dönen 6 Zümrüt Kristal
+  if (p.isCrystal) {
+    ctx.save();
+    ctx.rotate(t * 1.5);
+    for (let k = 0; k < 6; k++) {
+      const ang = (k * Math.PI) / 3;
+      const cx = Math.cos(ang) * (p.orbitR - 10), cy = Math.sin(ang) * (p.orbitR - 10);
+      ctx.fillStyle = p.crystalHarvested ? 'rgba(110,197,179,0.3)' : '#6ec5b3';
+      ctx.shadowColor = '#6ec5b3'; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 5); ctx.lineTo(cx + 3.5, cy); ctx.lineTo(cx, cy + 5); ctx.lineTo(cx - 3.5, cy);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Süper Kütleli Gezegen Özel Efekti: Geniş Ametist Halka
+  if (p.isSuper) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.arc(0, 0, p.r * 1.35, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Hassas Altın Enlem Çizgileri (Astrolabe Arcs)
+  ctx.save(); ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.clip();
+  ctx.strokeStyle = 'rgba(235,208,141,0.25)'; ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath(); ctx.ellipse(0, i * p.r * 0.35, p.r * 0.95, p.r * 0.15, p.tilt * 0.3, 0, TAU); ctx.stroke();
+  }
+  ctx.restore();
+
+  // İnce Dış Altın Rim
+  ctx.strokeStyle = 'rgba(235,208,141,0.5)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.stroke();
+
+  if (p.ringed) drawArmillaryFront();
+
+  ctx.restore();
+}
+
+/* ================= GÖKSEL KONTROL YILDIZI (MAJESTIC CELESTIAL STAR) ================= */
+function drawCelestialStar(p, cur, isTarget, t) {
+  ctx.save(); ctx.translate(p.x, p.y);
+
+  // 1. Yıldız Yörünge Halkası (Gravitasyonel Işık Çemberi & Yıldız Tozu)
+  ctx.strokeStyle = cur ? 'rgba(255,215,0,0.85)' : isTarget ? 'rgba(255,255,255,0.95)' : p.visited ? 'rgba(235,208,141,0.25)' : 'rgba(235,208,141,0.55)';
+  ctx.lineWidth = isTarget ? 2.6 : 1.5; ctx.setLineDash([5, 8]); ctx.lineDashOffset = -t * 14;
+  ctx.beginPath(); ctx.arc(0, 0, p.orbitR, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+
+  if (isTarget) {
+    ctx.strokeStyle = 'rgba(255,215,0,0.35)'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(0, 0, p.orbitR, 0, TAU); ctx.stroke();
+  }
+  if (p.pulse > 0) {
+    ctx.strokeStyle = `rgba(255,215,0,${p.pulse})`; ctx.lineWidth = 3.5 * p.pulse;
+    ctx.beginPath(); ctx.arc(0, 0, p.orbitR + (1 - p.pulse) * 45, 0, TAU); ctx.stroke();
+  }
+
+  // Yörüngede süzülen 4 adet altın yıldız feneri
+  ctx.save();
+  ctx.rotate(t * 0.8);
+  for (let k = 0; k < 4; k++) {
+    const ang = (k * Math.PI) / 2;
+    const px = Math.cos(ang) * p.orbitR, py = Math.sin(ang) * p.orbitR;
+    ctx.fillStyle = '#ffffff'; ctx.shadowColor = p.cpColor || '#ffd700'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(px, py, 2.4, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+
+  // 2. Devasa Parıldayan Dış Taçküre (Pulsing Stellar Corona / Radiant Halo)
+  const pulseScale = 1 + 0.08 * Math.sin(t * 3.5 + p.seed * 5);
+  const glowR = p.r * 2.5 * pulseScale;
+  const haloGrad = ctx.createRadialGradient(0, 0, p.r * 0.35, 0, 0, glowR);
+  haloGrad.addColorStop(0, p.cpGlow || 'rgba(255, 215, 0, 0.7)');
+  haloGrad.addColorStop(0.35, (p.cpGlow || 'rgba(255, 215, 0, 0.7)').replace('0.7', '0.35').replace('0.8', '0.4').replace('0.65', '0.3'));
+  haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TAU); ctx.fill();
+
+  // 3. Korona Işınları & Güneş Plazma Dilleri (Dynamic Corona Rays / Spikes)
+  ctx.save();
+  ctx.rotate(t * 0.22);
+  ctx.globalCompositeOperation = 'screen';
+  const rayCount = 14;
+  for (let i = 0; i < rayCount; i++) {
+    const rayAngle = (i * TAU) / rayCount;
+    const rayLen = p.r * (1.35 + 0.4 * Math.sin(t * 4 + i * 1.6));
+    const rayWidth = p.r * 0.24;
+    ctx.save();
+    ctx.rotate(rayAngle);
+    const rg = ctx.createLinearGradient(0, 0, rayLen, 0);
+    rg.addColorStop(0, p.cpColor || '#ffd700');
+    rg.addColorStop(0.5, p.cpGlow || 'rgba(255, 215, 0, 0.5)');
+    rg.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.moveTo(p.r * 0.6, -rayWidth * 0.5);
+    ctx.lineTo(rayLen, 0);
+    ctx.lineTo(p.r * 0.6, rayWidth * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 4. Optik Yıldız Kırınım Haçı (Diffraction Cross & Lens Flare)
+  ctx.save();
+  ctx.rotate(t * 0.06);
+  ctx.globalCompositeOperation = 'screen';
+  const spikeLen = p.r * 2.8;
+  const crossGradH = ctx.createLinearGradient(-spikeLen, 0, spikeLen, 0);
+  crossGradH.addColorStop(0, 'rgba(255,255,255,0)');
+  crossGradH.addColorStop(0.5, '#ffffff');
+  crossGradH.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = crossGradH;
+  ctx.fillRect(-spikeLen, -1.2, spikeLen * 2, 2.4);
+
+  const crossGradV = ctx.createLinearGradient(0, -spikeLen, 0, spikeLen);
+  crossGradV.addColorStop(0, 'rgba(255,255,255,0)');
+  crossGradV.addColorStop(0.5, '#ffffff');
+  crossGradV.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = crossGradV;
+  ctx.fillRect(-1.2, -spikeLen, 2.4, spikeLen * 2);
+
+  // Çapraz narin ışınlar
+  ctx.rotate(Math.PI / 4);
+  const diagLen = spikeLen * 0.6;
+  const diagGrad = ctx.createLinearGradient(-diagLen, 0, diagLen, 0);
+  diagGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  diagGrad.addColorStop(0.5, 'rgba(255,255,255,0.6)');
+  diagGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = diagGrad;
+  ctx.fillRect(-diagLen, -0.8, diagLen * 2, 1.6);
+  ctx.restore();
+
+  // 5. Akkor Yıldız Çekirdeği (Blazing Photosphere)
+  const coreGrad = ctx.createRadialGradient(-p.r * 0.25, -p.r * 0.25, 0, 0, 0, p.r);
+  coreGrad.addColorStop(0, p.cpCore || '#ffffff');
+  coreGrad.addColorStop(0.35, p.cpColor || '#fff2c9');
+  coreGrad.addColorStop(0.75, p.tone || '#fb923c');
+  coreGrad.addColorStop(1, p.cpColor || '#ffd700');
+  ctx.shadowColor = p.cpColor || '#ffd700'; ctx.shadowBlur = 24;
+  ctx.fillStyle = coreGrad;
+  ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 6. Manyetik Plazma Korona Çemberi (Solar Flare Prominence Loop)
+  ctx.save();
+  ctx.rotate(-t * 0.65);
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8;
+  ctx.shadowColor = p.cpColor || '#ffd700'; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.arc(0, 0, p.r * 1.08, 0, Math.PI * 0.75); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, p.r * 1.08, Math.PI, Math.PI * 1.65); ctx.stroke();
+  ctx.restore();
+
+  // 7. Görkemli Yıldız Başlığı & Bilgi Levhası
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.font = `700 12px ${FONT}`;
+  ctx.fillStyle = p.cpColor || '#ffd700';
+  ctx.shadowColor = p.cpColor || '#ffd700'; ctx.shadowBlur = 14;
+  ctx.fillText(`✦ YILDIZ: ${p.cpName.toUpperCase()} ✦`, 0, -p.orbitR - 18);
+
+  ctx.font = `600 9px ${FONT_SANS}`;
+  ctx.fillStyle = '#fff9db';
+  ctx.shadowBlur = 8;
+  ctx.fillText(`${p.cpSector} • ${p.cpStarType}`, 0, -p.orbitR - 4);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/* Göksel Tutulma / Kara Delik (Golden Solar Corona Eclipse) */
+function drawEclipse(b, t) {
+  ctx.save(); ctx.translate(b.x, b.y);
+
+  // Kütleçekim Alan Dalgası
+  const g = ctx.createRadialGradient(0, 0, b.r, 0, 0, b.infl);
+  g.addColorStop(0, 'rgba(235,208,141,0.35)');
+  g.addColorStop(0.4, 'rgba(184,146,67,0.12)');
+  g.addColorStop(1, 'rgba(9,14,26,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, b.infl, 0, TAU); ctx.fill();
+
+  // Gravitasyonel Işık Eğrileri
+  ctx.strokeStyle = 'rgba(235,208,141,0.2)'; ctx.setLineDash([3, 10]); ctx.lineWidth = 1; ctx.lineDashOffset = t * 8;
+  ctx.beginPath(); ctx.arc(0, 0, b.infl * 0.75, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+
+  // Dönen Güneş Koronası / Foton Halkaları
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 4; i++) {
+    ctx.save(); ctx.rotate(b.rot * (1 + i * 0.3) + i * 1.5);
+    ctx.strokeStyle = i % 2 ? 'rgba(255,242,201,0.65)' : 'rgba(235,208,141,0.75)'; ctx.lineWidth = 2.2 - i * 0.3;
+    ctx.beginPath(); ctx.arc(0, 0, b.r + 5 + i * 5, 0, Math.PI * (1 + i * 0.12)); ctx.stroke(); ctx.restore();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Tutulmanın Kara Kalbi
+  ctx.shadowColor = '#ebd08d'; ctx.shadowBlur = 24; ctx.fillStyle = '#05070d';
+  ctx.beginPath(); ctx.arc(0, 0, b.r, 0, TAU); ctx.fill();
+  ctx.shadowBlur = 0; ctx.strokeStyle = '#fff2c9'; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.restore();
+}
+
+/* Astral Yıldız Prizması (3 Farklı Kademe: Standart 10, Büyük 20, Nadir 50 Toz) */
+function drawAstralPrism(c, t) {
+  const y = c.y + Math.sin(t * 2.8 + c.ph) * 3;
+  const sx = 0.6 + 0.4 * Math.abs(Math.cos(t * 2.2 + c.ph));
+  const tier = c.tier || 1;
+
+  ctx.save();
+  ctx.translate(c.x, y);
+
+  if (tier === 3) {
+    // ✦ KADEME 3: NADİR GÖKSEL PRİZMA (50 TOZ) ✦
+    // Dönen starlight pusula halkası ve 4 astral altın kıvılcım
+    ctx.save();
+    ctx.rotate(t * 2.2 + c.ph);
+    for (let k = 0; k < 4; k++) {
+      const ang = (k * Math.PI) / 2;
+      const ox = Math.cos(ang) * 20, oy = Math.sin(ang) * 20;
+      ctx.fillStyle = k % 2 === 0 ? '#ffd700' : '#ffffff';
+      ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(ox, oy, 1.8, 0, TAU); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath(); ctx.arc(0, 0, 18, 0, TAU); ctx.stroke();
+    ctx.restore();
+
+    // Elmas kristal gövdesi (sx ile 3D faset rotasyonu)
+    ctx.scale(sx, 1);
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 22;
+    
+    // Üst tepe tacı (yakut & ametist degrade parıltı)
+    const gTop = ctx.createLinearGradient(0, -16, 0, 3);
+    gTop.addColorStop(0, '#fff9e6');
+    gTop.addColorStop(0.4, '#ffd700');
+    gTop.addColorStop(1, '#e57b88');
+    ctx.fillStyle = gTop;
+    ctx.beginPath();
+    ctx.moveTo(0, -16); ctx.lineTo(10, 0); ctx.lineTo(0, 3); ctx.lineTo(-10, 0);
+    ctx.closePath(); ctx.fill();
+
+    // Alt külah fasetleri
+    const gBot = ctx.createLinearGradient(0, 3, 0, 16);
+    gBot.addColorStop(0, '#e57b88');
+    gBot.addColorStop(1, '#9c7ad6');
+    ctx.fillStyle = gBot;
+    ctx.beginPath();
+    ctx.moveTo(0, 3); ctx.lineTo(10, 0); ctx.lineTo(0, 16); ctx.lineTo(-10, 0);
+    ctx.closePath(); ctx.fill();
+
+    // Merkez parlama faseti
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(0, -16); ctx.lineTo(4, -2); ctx.lineTo(0, 2); ctx.lineTo(-4, -2);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+
+  } else if (tier === 2) {
+    // ✦ KADEME 2: BÜYÜK YILDIZ TOZU (20 TOZ) ✦
+    // Astral geode yörünge çemberi
+    ctx.save();
+    ctx.strokeStyle = 'rgba(110, 197, 179, 0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 4]);
+    ctx.lineDashOffset = t * 14 + c.ph * 5;
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.stroke();
+    ctx.restore();
+
+    // Büyük Zümrüt / Turkuaz Prizma
+    ctx.scale(sx, 1);
+    ctx.shadowColor = '#6ec5b3'; ctx.shadowBlur = 16;
+
+    // Üst faset (Açık akuamarin)
+    ctx.fillStyle = '#6ec5b3';
+    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill();
+
+    // Alt derin faset
+    ctx.fillStyle = '#2a7567';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.closePath(); ctx.fill();
+
+    // Parlak yansıma faseti
+    ctx.fillStyle = '#a7f3d0';
+    ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(4, -1); ctx.lineTo(-4, -1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(0, -4, 1.5, 0, TAU); ctx.fill();
+    ctx.shadowBlur = 0;
+
+  } else {
+    // ✦ KADEME 1: STANDART YILDIZ TOZU (10 TOZ) ✦
+    ctx.scale(sx, 1);
+    ctx.shadowColor = '#ebd08d'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ebd08d'; 
+    ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(6, 0); ctx.lineTo(0, 9); ctx.lineTo(-6, 0); ctx.closePath(); ctx.fill();
+    
+    // İç faset ışıltısı
+    ctx.fillStyle = '#ffffff'; 
+    ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(3, -1); ctx.lineTo(-3, -1); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+/* Kozmik Astral Taş / Geod */
+function drawGeode(r, b) {
+  ctx.save(); ctx.translate(r.x, b.y);
+  const dir = Math.sign(b.speed);
+  
+  // İnce toz kuyruğu
+  const tg = ctx.createLinearGradient(0, 0, -dir * 42, 0);
+  tg.addColorStop(0, 'rgba(229,123,136,0.4)'); tg.addColorStop(1, 'rgba(229,123,136,0)');
+  ctx.fillStyle = tg; ctx.beginPath(); ctx.moveTo(0, -r.r * 0.7); ctx.lineTo(-dir * 42, 0); ctx.lineTo(0, r.r * 0.7); ctx.fill();
+  
+  ctx.rotate(r.rot);
+  ctx.fillStyle = '#181f2f'; ctx.strokeStyle = '#e57b88'; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  r.verts.forEach((v, i) => { const a = i / r.verts.length * TAU; i ? ctx.lineTo(Math.cos(a) * v, Math.sin(a) * v) : ctx.moveTo(Math.cos(a) * v, Math.sin(a) * v); });
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+/* Göksel İpek Tozu İzi (Silk Ribbon Stardust Trail) */
+function drawStardustTrail() {
+  const tr = G.trail; if (tr.length < 2) return;
+  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  const baseCol = G.slowActive ? '156,122,214' : '235,208,141';
+  for (let i = 1; i < tr.length; i++) {
+    const a = i / tr.length;
+    ctx.strokeStyle = `rgba(${baseCol},${a * 0.8})`; ctx.lineWidth = a * 5.5;
+    ctx.beginPath(); ctx.moveTo(tr[i - 1][0], tr[i - 1][1]); ctx.lineTo(tr[i][0], tr[i][1]); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* Astral Rehber Işık Çizgisi */
+function drawAstralGuide(L) {
+  const pts = L.pts, col = L.danger ? '229,123,136' : L.target ? '110,197,179' : '235,208,141';
+  ctx.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    if (i % 2) continue;
+    const a = 1 - i / pts.length;
+    ctx.strokeStyle = `rgba(${col},${0.3 + a * 0.65})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pts[i - 1][0], pts[i - 1][1]); ctx.lineTo(pts[i][0], pts[i][1]); ctx.stroke();
+  }
+  const e = pts[pts.length - 1];
+  ctx.strokeStyle = `rgba(${col},0.9)`; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(e[0], e[1], L.target ? 5 : 3, 0, TAU); ctx.stroke();
+}
+
+/* Astral Origami Yıldız Gemisi */
+function drawAstralShip(s, t) {
+  ctx.save(); ctx.translate(s.x, s.y);
+  
+  // Kalkan Küresi
+  if (G.shield > 0) {
+    ctx.strokeStyle = `rgba(110,197,179,${0.4 + 0.25 * Math.sin(t * 5)})`; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(0, 0, 16, 0, TAU); ctx.stroke();
+  }
+
+  // Mikro Dümen Aktif Göstergesi (Sağ tık tutulduğunda)
+  if (rightHolding && s.mode === 'fly') {
+    ctx.strokeStyle = 'rgba(110,197,179,0.55)'; ctx.lineWidth = 1.2;
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath(); ctx.arc(0, 0, 18, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  
+  ctx.rotate(s.heading);
+  const shipId = save.ship || 'aura7';
+  const fl = 6 + Math.random() * 5 + (s.mode === 'fly' ? 5 : 0);
+
+  if (shipId === 'solaris') {
+    // SOLARIS-X: Güneş yelkenlisi, kehribar ve alev
+    ctx.fillStyle = 'rgba(245,158,11,0.9)';
+    ctx.beginPath(); ctx.moveTo(-6, -4); ctx.lineTo(-7 - fl * 1.3, 0); ctx.lineTo(-6, 4); ctx.fill();
+    
+    ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 14;
+    ctx.fillStyle = '#b45309'; ctx.strokeStyle = '#fef08a'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-6, -11); ctx.lineTo(-2, -4); ctx.lineTo(-7, 0); ctx.lineTo(-2, 4); ctx.lineTo(-6, 11); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-2, -3); ctx.lineTo(-5, 0); ctx.lineTo(-2, 3); ctx.closePath(); ctx.fill();
+  } else if (shipId === 'astraea') {
+    // ASTRAEA: Çift çatallı kartograf kalyonu, turkuaz pusula
+    ctx.fillStyle = 'rgba(110,197,179,0.9)';
+    ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-6 - fl, 0); ctx.lineTo(-6, 3); ctx.fill();
+
+    ctx.shadowColor = '#6ec5b3'; ctx.shadowBlur = 14;
+    ctx.fillStyle = '#134e4a'; ctx.strokeStyle = '#6ec5b3'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); 
+    ctx.moveTo(14, -3); ctx.lineTo(10, 0); ctx.lineTo(14, 3);
+    ctx.lineTo(-6, -8); ctx.lineTo(-3, 0); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#a7f3d0'; ctx.beginPath(); ctx.arc(1, 0, 2.5, 0, TAU); ctx.fill();
+  } else if (shipId === 'chrono') {
+    // CHRONO-KALYON: Ametist zaman bükücü
+    ctx.fillStyle = 'rgba(156,122,214,0.9)';
+    ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-6 - fl, 0); ctx.lineTo(-6, 3); ctx.fill();
+
+    ctx.shadowColor = '#9c7ad6'; ctx.shadowBlur = 14;
+    ctx.fillStyle = '#2e1065'; ctx.strokeStyle = '#9c7ad6'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-5, -9); ctx.lineTo(-8, -4); ctx.lineTo(-4, 0); ctx.lineTo(-8, 4); ctx.lineTo(-5, 9); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#e9d5ff'; ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(0, -3); ctx.lineTo(-4, 0); ctx.lineTo(0, 3); ctx.closePath(); ctx.fill();
+  } else if (shipId === 'aethelgard') {
+    // AETHELGARD: Üçlü taç amiral gemisi, çift plazma alevi
+    ctx.fillStyle = 'rgba(235,208,141,0.95)';
+    ctx.beginPath(); ctx.moveTo(-6, -5); ctx.lineTo(-6 - fl, -4); ctx.lineTo(-6, -2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-6, 2); ctx.lineTo(-6 - fl, 4); ctx.lineTo(-6, 5); ctx.fill();
+
+    ctx.shadowColor = '#e57b88'; ctx.shadowBlur = 16;
+    ctx.fillStyle = '#4c0519'; ctx.strokeStyle = '#ebd08d'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(8, -4); ctx.lineTo(10, -9); ctx.lineTo(-6, -9); ctx.lineTo(-3, 0); ctx.lineTo(-6, 9); ctx.lineTo(10, 9); ctx.lineTo(8, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff2c9'; ctx.beginPath(); ctx.moveTo(16, 0); ctx.lineTo(-1, -3); ctx.lineTo(-5, 0); ctx.lineTo(-1, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#e57b88'; ctx.beginPath(); ctx.arc(2, 0, 2.5, 0, TAU); ctx.fill();
+  } else if (shipId === 'archon') {
+    // ARCHON-APEX: Altın Zirve Hükümran Kalyon
+    ctx.fillStyle = 'rgba(255,215,0,0.95)';
+    ctx.beginPath(); ctx.moveTo(-6, -5); ctx.lineTo(-7 - fl * 1.2, -4); ctx.lineTo(-6, -2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-6, 2); ctx.lineTo(-7 - fl * 1.2, 4); ctx.lineTo(-6, 5); ctx.fill();
+
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 18;
+    ctx.fillStyle = '#2d1c02'; ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(18, 0); ctx.lineTo(10, -6); ctx.lineTo(12, -12); ctx.lineTo(-7, -10); ctx.lineTo(-4, 0); ctx.lineTo(-7, 10); ctx.lineTo(12, 12); ctx.lineTo(10, 6);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    
+    // Elmas taç faseti
+    ctx.fillStyle = '#fff9db'; ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(2, -4); ctx.lineTo(-3, 0); ctx.lineTo(2, 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(4, 0, 2.8, 0, TAU); ctx.fill();
+  } else {
+    // AURA-7: Sedef ve Altın Origami Geometrisi
+    ctx.fillStyle = 'rgba(235,208,141,0.85)'; ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-6 - fl, 0); ctx.lineTo(-6, 3); ctx.fill();
+
+    ctx.shadowColor = '#ebd08d'; ctx.shadowBlur = 12;
+    const g = ctx.createLinearGradient(-8, 0, 13, 0);
+    g.addColorStop(0, '#cfa24d'); g.addColorStop(0.6, '#faf6ed'); g.addColorStop(1, '#ffffff');
+    ctx.fillStyle = g; ctx.strokeStyle = '#ebd08d'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(-8, -8); ctx.lineTo(-4, 0); ctx.lineTo(-8, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(184,146,67,0.3)';
+    ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(-4, 0); ctx.lineTo(-8, -8); ctx.closePath(); ctx.fill();
+  }
+
+  ctx.restore(); ctx.shadowBlur = 0;
+}
+
+/* ================= HUD VE ARAYÜZ ================= */
+const hud = { score: -1, mult: -1, money: -1, shield: -1, slow: -1 };
+function updateHUD() {
+  if (G.score !== hud.score) $('hudScore').textContent = hud.score = G.score;
+  const m = 1 + G.combo;
+  if (m !== hud.mult) { hud.mult = m; const el = $('hudMult'); el.textContent = 'x' + m; el.classList.toggle('active', m > 1); }
+  if (G.money !== hud.money) $('hudCrystal').textContent = hud.money = G.money;
+  if (G.shield !== hud.shield) { 
+    hud.shield = G.shield; 
+    $('hudShield').textContent = G.shield > 0 ? '✦ KALKAN: ' + G.shield : ''; 
+  }
+  const sp = Math.round(G.slow / G.slowMax * 100);
+  if (sp !== hud.slow) { hud.slow = sp; $('slowFill').style.width = sp + '%'; }
+  $('slowVignette').classList.toggle('on', G.slowActive);
+}
+
+function popMult() { const el = $('hudMult'); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+function showHint(txt) { const h = $('hint'); h.textContent = txt; h.classList.remove('hidden'); }
+function hideHint() { $('hint').classList.add('hidden'); }
+const screens = ['menu', 'market', 'hangar', 'roadmap', 'gameover'];
+function showScreen(id) { screens.forEach(s => $(s).classList.toggle('hidden', s !== id)); }
+
+function pipsHTML(l) { 
+  let h = '<div class="dock-bars">'; 
+  for (let i = 0; i < 5; i++) h += `<span class="dock-bar-pip ${i < l ? 'on' : ''}"></span>`; 
+  return h + '</div>'; 
+}
+
+const allMax = () => UPG.every(u => save.up[u.id] >= 5);
+
+function updateMenuCheckpointDisplay() {
+  const curCp = save.startCheckpoint || 0;
+  const cpObj = CHECKPOINTS.find(c => c.num === curCp);
+  const txt = curCp > 0 ? `[ ${curCp}. AŞAMA: ${cpObj ? cpObj.name.toUpperCase() : ''} YILDIZINDAN BAŞLA ]` : '[ 1. GEZEGENDEN BAŞLA ]';
+  if ($('menuPlaySub')) $('menuPlaySub').textContent = txt;
+  if ($('menuCpBadge')) $('menuCpBadge').textContent = curCp > 0 ? `★ ${curCp}. AŞAMA YILDIZI: ${cpObj ? cpObj.name : ''}` : '1. GEZEGEN (NORMAL BAŞLANGIÇ)';
+  if ($('goRetrySub')) $('goRetrySub').textContent = txt;
+}
+
+function showMenu() {
+  state = 'menu'; $('hud').classList.add('hidden'); hideHint(); $('slowVignette').classList.remove('on');
+  newGame(true); showScreen('menu');
+  $('menuBest').textContent = save.best; $('menuBank').textContent = save.bank;
+  
+  // Aktif Filo Gemi Önizlemesini Güncelle
+  const curShip = SHIPS.find(s => s.id === (save.ship || 'aura7')) || SHIPS[0];
+  if ($('menuShipBadge')) $('menuShipBadge').textContent = 'YILDIZ GEMİSİ: ' + curShip.short;
+  if ($('menuShipCore')) $('menuShipCore').innerHTML = shipSVG(curShip.id, 34);
+  if ($('menuShipName')) $('menuShipName').textContent = curShip.name;
+
+  updateMenuCheckpointDisplay();
+
+  $('menuLevels').innerHTML = UPG.map(u => `
+    <div class="dock-item" style="border-color:${save.up[u.id] ? u.color : 'rgba(235,208,141,0.2)'}">
+      <div class="dock-item-icon" style="color:${u.color}">${ICONS[u.id]}</div>
+      <span class="dock-item-name">${u.short}</span>
+      ${pipsHTML(save.up[u.id])}
+    </div>
+  `).join('');
+  
+  $('maxBadge').classList.toggle('hidden', !allMax());
+  $('btnSound').textContent = save.sound ? 'SES: AÇIK' : 'SES: KAPALI';
+}
+
+function showMarket() {
+  if (state !== 'menu') newGame(true);
+  state = 'market'; $('hud').classList.add('hidden'); showScreen('market'); renderMarket();
+}
+
+function renderMarket(boughtId) {
+  $('marketBank').textContent = save.bank;
+  $('upgradeList').innerHTML = UPG.map((u, i) => {
+    const l = save.up[u.id], maxed = l >= 5, cost = COSTS[l];
+    const btn = maxed 
+      ? '<button class="btn-buy-cyber maxed" disabled>TAMAMLANDI</button>'
+      : `<button class="btn-buy-cyber" data-id="${u.id}" ${save.bank < cost ? 'disabled' : ''}><span class="gem-icon"></span>${cost} TOZ</button>`;
+    
+    let pips = '<div class="card-pips">';
+    for (let k = 0; k < 5; k++) pips += `<span class="card-pip ${k < l ? 'on' : ''}"></span>`;
+    pips += '</div>';
+
+    return `
+      <div class="cyber-card ${boughtId === u.id ? 'bought' : ''}" style="border-left: 3px solid ${u.color};">
+        <div class="card-icon-hex" style="color:${u.color}; border-color:${u.color};">${ICONS[u.id]}</div>
+        <div class="card-details">
+          <h3>${u.name} <span class="card-tier">KADEME ${l || 0}</span></h3>
+          <p class="card-desc">${u.desc}</p>
+          <div class="card-stat">${u.val(l)}${maxed ? '' : ' ➔ ' + u.val(l + 1)}</div>
+          ${pips}
+        </div>
+        ${btn}
+      </div>
+    `;
+  }).join('');
+}
+
+$('upgradeList').addEventListener('click', e => {
+  const b = e.target.closest('.btn-buy-cyber'); if (!b || b.disabled) return;
+  const id = b.dataset.id, l = save.up[id], cost = COSTS[l];
+  if (l >= 5 || save.bank < cost) { SFX.deny(); return; }
+  save.bank -= cost; save.up[id] = l + 1; persist(); SFX.buy(); renderMarket(id);
+});
+
+/* ================= GÖKSEL TERSANE (GEMİ DÜKKANI) ================= */
+function showHangar() {
+  if (state !== 'menu') newGame(true);
+  state = 'hangar'; $('hud').classList.add('hidden'); showScreen('hangar'); renderHangar();
+}
+
+function renderHangar(targetShipId) {
+  $('hangarBank').textContent = save.bank;
+  const currentId = targetShipId || save.ship || 'aura7';
+  const curShip = SHIPS.find(s => s.id === currentId) || SHIPS[0];
+
+  // Vitrin güncelle
+  $('showcaseShipCore').innerHTML = shipSVG(curShip.id, 50);
+  $('showcaseBadge').textContent = save.ship === curShip.id ? '★ SEÇİLİ AKTİF GEMİ ★' : 'FİLO ADAYI';
+  $('showcaseName').textContent = curShip.name;
+  $('showcaseRole').textContent = curShip.role;
+  $('showcasePerk').textContent = curShip.trait;
+
+  // Gemi Listesi
+  $('shipList').innerHTML = SHIPS.map(sh => {
+    const owned = save.ships.includes(sh.id);
+    const isCur = save.ship === sh.id;
+    let btnHtml = '';
+    if (isCur) {
+      btnHtml = `<button class="btn-equip-ship active" disabled>✦ SEÇİLDİ</button>`;
+    } else if (owned) {
+      btnHtml = `<button class="btn-equip-ship equip" data-action="equip" data-id="${sh.id}">TAYİN ET</button>`;
+    } else {
+      btnHtml = `<button class="btn-equip-ship buy" data-action="buy" data-id="${sh.id}" ${save.bank < sh.cost ? 'disabled' : ''}><span class="gem-icon"></span>${sh.cost} TOZ</button>`;
+    }
+
+    return `
+      <div class="cyber-card ${isCur ? 'bought' : ''}" style="border-left: 3px solid ${sh.color}; cursor:pointer;" data-preview="${sh.id}">
+        <div class="card-icon-hex" style="color:${sh.color}; border-color:${sh.color};">
+          ${shipSVG(sh.id, 32)}
+        </div>
+        <div class="card-details">
+          <h3>${sh.name}</h3>
+          <p class="card-desc">${sh.desc}</p>
+          <div class="card-stat" style="color:${sh.color};">✦ ${sh.trait}</div>
+          <div class="ship-card-stats">
+            <span>Hız: <b>${sh.stats.spd}</b></span>
+            <span>Dümen: <b>${sh.stats.steer}</b></span>
+          </div>
+        </div>
+        ${btnHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+$('shipList').addEventListener('click', e => {
+  const card = e.target.closest('.cyber-card');
+  const btn = e.target.closest('.btn-equip-ship');
+  if (btn) {
+    const action = btn.dataset.action, id = btn.dataset.id;
+    if (action === 'equip') {
+      save.ship = id; persist(); SFX.capture(); renderHangar(id);
+    } else if (action === 'buy') {
+      const sh = SHIPS.find(s => s.id === id);
+      if (!sh || save.bank < sh.cost) { SFX.deny(); return; }
+      save.bank -= sh.cost;
+      if (!save.ships.includes(id)) save.ships.push(id);
+      save.ship = id;
+      persist();
+      SFX.buy();
+      renderHangar(id);
+    }
+    return;
+  }
+  if (card && card.dataset.preview) {
+    renderHangar(card.dataset.preview);
+    SFX.click();
+  }
+});
+
+/* ================= GÖKSEL SEYİR: İNTERAKTİF UZAY & YILDIZ HARİTASI ================= */
+const MAP_W = 450, MAP_H = 1950;
+const MAP_STARS = [
+  { num: 0, name: '1. GEZEGEN (BAŞLANGIÇ)', type: 'Karasal Gezegen', sector: 'Dünyasal Sistem', color: '#ebd08d', glow: 'rgba(235,208,141,0.6)', x: 225, y: 1850, r: 18, desc: 'Sıfırdan, en sakin yörüngeden başlayan geleneksel yolculuk doktrini.' },
+  { num: 10, name: 'SİRİUS (AKYILDIZ)', type: 'A1V Mavi-Beyaz Anakol', sector: 'Büyük Köpek', color: '#7dd3fc', glow: 'rgba(125,211,252,0.7)', x: 310, y: 1540, r: 24, desc: 'Gökyüzünün en parlak akyıldızı. Yoğun safir-beyaz plazma ışığıyla parıldar.' },
+  { num: 20, name: 'VEGA', type: 'A0V Zümrüt-Safir Dev', sector: 'Lir Takımyıldızı', color: '#6ee7b7', glow: 'rgba(110,231,183,0.7)', x: 135, y: 1250, r: 24, desc: 'Kuzey semasının elmas kraliçesi; hızla dönen elipsoid kutup ışıltılı yıldız.' },
+  { num: 30, name: 'ARCTURUS', type: 'K0III Turuncu Dev', sector: 'Çoban Takımyıldızı', color: '#fb923c', glow: 'rgba(251,146,60,0.7)', x: 315, y: 970, r: 25, desc: 'Kuzey göğünün en parlak altın-turuncu devi. Devasa plazma rüzgarları saçar.' },
+  { num: 40, name: 'ALDEBARAN', type: 'K5III Boğa\'nın Gözü', sector: 'Boğa Takımyıldızı', color: '#f87171', glow: 'rgba(248,113,113,0.7)', x: 135, y: 760, r: 25, desc: 'Boğa takımyıldızının hiddetli alevli gözü. Güçlü korona ve yakut alev taçları.' },
+  { num: 50, name: 'BETELGEUSE', type: 'M1-2 Kızıl Süperdev', sector: 'Avcı Takımyıldızı', color: '#ef4444', glow: 'rgba(239,68,68,0.75)', x: 305, y: 580, r: 27, desc: 'Avcı omzunda pulsasyon yapan devasa kor canavarı. Süpernova öncesi akkor alev.' },
+  { num: 60, name: 'RİGEL', type: 'B8Ia Mavi Süperdev', sector: 'Avcı Takımyıldızı', color: '#38bdf8', glow: 'rgba(56,189,248,0.75)', x: 140, y: 430, r: 27, desc: 'Göz alıcı elektrik mavisi süperdev; 40.000 Güneş gücünde muazzam ışıma gücü.' },
+  { num: 70, name: 'POLARİS', type: 'F7Ib Kadim Pusula', sector: 'Küçük Ayı', color: '#fef08a', glow: 'rgba(254,240,138,0.75)', x: 305, y: 290, r: 25, desc: 'Gökkubbenin ebedi pusulası; altın-platin taçlı çoklu güneş sistemi.' },
+  { num: 80, name: 'ANTARES', type: 'M1.5Iab Akrep Kalbi', sector: 'Akrep Takımyıldızı', color: '#f43f5e', glow: 'rgba(244,63,94,0.75)', x: 145, y: 180, r: 26, desc: 'Mars\'ın ezeli rakibi dev süperdev; çevresinde iyonize kırmızı gaz haleleri.' },
+  { num: 90, name: 'CANOPUS', type: 'F0II Beyaz Parlak Dev', sector: 'Karina Takımyıldızı', color: '#e0e7ff', glow: 'rgba(224,231,255,0.8)', x: 290, y: 95, r: 26, desc: 'Güney semasının en parlak feneri; kristal elmas beyaz ışıma.' },
+  { num: 100, name: 'DENEB (APEX)', type: 'A2Ia Beyaz Hiperdev', sector: 'Kuğu Takımyıldızı', color: '#ffd700', glow: 'rgba(255,215,0,0.85)', x: 225, y: 25, r: 28, desc: 'Samanyolu\'nun en parlak hiperdevlerinden biri. Kozmik seyrin ebedi doruk zirvesi.' }
+];
+
+const MAP_FEATURES = [
+  { stage: 5, name: 'Asteroid Kuşağı', tag: '5. Gezegen', desc: 'Yörüngeler arası hareketli göktaşları.', color: '#ebd08d', x: 260, y: 1695, kind: 'rocks' },
+  { stage: 14, name: 'Astral Nebula (Dinginlik)', tag: '14. Gezegen', desc: 'Slo-Mo Dinginlik enerjisini anında yeniler.', color: '#6ec5b3', x: 230, y: 1420, kind: 'nebula' },
+  { stage: 18, name: 'Kara Delik Çekimi', tag: '18. Gezegen', desc: 'Güçlü sapan manevrası & olay ufku tehlikesi.', color: '#e57b88', x: 165, y: 1315, kind: 'blackhole' },
+  { stage: 24, name: 'Pulsar Şok Dalgası', tag: '24. Gezegen', desc: 'Genişleyen şok dalgaları; sörf ekstra itki sağlar.', color: '#ffd700', x: 200, y: 1140, kind: 'pulsar' },
+  { stage: 28, name: 'Kristal Cenneti (+50 Toz)', tag: '28. Gezegen', desc: '6 adet dönen zümrüt hasat kristali ikramiyesi.', color: '#6ec5b3', x: 285, y: 1040, kind: 'crystal' },
+  { stage: 34, name: 'Solucan Deliği (Işınlanma)', tag: '34. Gezegen', desc: 'Uzay-zaman bükülmesi ile anında hedef gezegene fırlama.', color: '#9c7ad6', x: 235, y: 885, kind: 'wormhole' },
+  { stage: 38, name: 'Süper Dev Gezegen', tag: '38. Gezegen', desc: 'Çift astrolab halkası ve devasa kütleçekim alanı.', color: '#c084fc', x: 165, y: 805, kind: 'superplanet' },
+  { stage: 45, name: 'Plazma Jeod Kuşağı', tag: '45. Gezegen', desc: 'Hızlı savrulan yoğun asteroid fırtınası.', color: '#f59e0b', x: 220, y: 670, kind: 'rocks_dense' },
+  { stage: 55, name: 'İkili Singularite', tag: '55. Gezegen', desc: 'Çift çekirdekli ışık bükümü alanı.', color: '#38bdf8', x: 225, y: 505, kind: 'dual_singularity' },
+  { stage: 65, name: 'Hiper Büküm Koridoru', tag: '65. Gezegen', desc: 'Aşırı hızlı ivmelenme ve çoklu boyut sıçraması.', color: '#38bdf8', x: 220, y: 360, kind: 'hyper_corridor' },
+  { stage: 75, name: 'Kaotik Manyetik Fırtına', tag: '75. Gezegen', desc: 'Yüksek enerjili plazma dalgaları ve göksel girdaplar.', color: '#f43f5e', x: 225, y: 235, kind: 'magnetic_storm' }
+];
+
+let starMapInited = false;
+function initStarMap() {
+  const canvas = $('starMapCanvas');
+  const wrapper = $('starMapWrapper');
+  if (!canvas || !wrapper || starMapInited) return;
+  starMapInited = true;
+
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = MAP_W / rect.width;
+    const scaleY = MAP_H / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    // Yıldızlara tıklama kontrolü
+    for (const st of MAP_STARS) {
+      const dist = Math.hypot(mx - st.x, my - st.y);
+      if (dist < st.r + 26) {
+        const isUnlocked = st.num === 0 || (save.maxCheckpoint || 0) >= st.num;
+        if (isUnlocked) {
+          save.startCheckpoint = st.num;
+          persist();
+          SFX.capture();
+          updateStarInspector();
+          updateMenuCheckpointDisplay();
+        } else {
+          SFX.deny();
+          showHint(`🔒 KİLİTLİ: Bu yıldıza ulaşmak için ${st.num}. Gezegeni geçin.`);
+        }
+        return;
+      }
+    }
+
+    // Özelliklere / Nesnelere tıklama kontrolü (Bilgi gösterimi)
+    for (const f of MAP_FEATURES) {
+      if (Math.hypot(mx - f.x, my - f.y) < 30) {
+        SFX.click();
+        showHint(`✦ ${f.tag.toUpperCase()}: ${f.name.toUpperCase()} — ${f.desc}`);
+        return;
+      }
+    }
+  });
+}
+
+function resizeStarMap() {
+  const canvas = $('starMapCanvas');
+  const wrapper = $('starMapWrapper');
+  if (!canvas || !wrapper) return;
+  const rect = wrapper.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = rect.width || VW;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(MAP_H * (w / MAP_W) * dpr);
+  canvas.style.height = `${MAP_H * (w / MAP_W)}px`;
+}
+
+function updateStarInspector() {
+  const selected = save.startCheckpoint || 0;
+  const maxReached = save.maxCheckpoint || 0;
+  const curStar = MAP_STARS.find(s => s.num === selected) || MAP_STARS[0];
+  const maxStar = MAP_STARS.find(s => s.num === maxReached) || MAP_STARS[0];
+
+  $('roadmapMax').textContent = maxReached > 0 ? `${maxReached}. AŞAMA: ${maxStar.name}` : 'BAŞLANGIÇ (0)';
+  $('roadmapCur').textContent = selected > 0 ? `${selected}. AŞAMA: ${curStar.name}` : '1. GEZEGEN (NORMAL)';
+
+  $('inspectorStarIcon').textContent = selected > 0 ? '★' : '☉';
+  $('inspectorStarIcon').style.color = curStar.color || 'var(--gold)';
+  $('inspectorStarIcon').style.borderColor = curStar.color || 'var(--gold)';
+  $('inspectorStarTitle').textContent = curStar.name;
+  $('inspectorStarSub').textContent = `${curStar.sector} • ${curStar.type}`;
+  $('inspectorStarDesc').textContent = curStar.desc;
+
+  const subTxt = selected > 0 ? `[ ${selected}. AŞAMA: ${curStar.name} YILDIZINDAN BAŞLA ]` : '[ 1. GEZEGENDEN BAŞLA ]';
+  if ($('roadmapPlaySub')) $('roadmapPlaySub').textContent = subTxt;
+  if ($('menuPlaySub')) $('menuPlaySub').textContent = subTxt;
+  if ($('menuCpBadge')) $('menuCpBadge').textContent = selected > 0 ? `★ ${selected}. AŞAMA: ${curStar.name}` : '1. GEZEGEN (NORMAL BAŞLANGIÇ)';
+}
+
+function showRoadmap() {
+  if (state !== 'menu') newGame(true);
+  state = 'roadmap';
+  $('hud').classList.add('hidden');
+  showScreen('roadmap');
+  $('roadmapBank').textContent = save.bank;
+  initStarMap();
+  resizeStarMap();
+  updateStarInspector();
+
+  // Aktif yıldıza otomatik yumuşak kaydırma
+  setTimeout(() => {
+    const curStar = MAP_STARS.find(s => s.num === (save.startCheckpoint || 0)) || MAP_STARS[0];
+    const wrapper = $('starMapWrapper');
+    if (wrapper) {
+      const targetY = (curStar.y / MAP_H) * wrapper.scrollHeight;
+      wrapper.scrollTo({ top: targetY - wrapper.clientHeight * 0.45, behavior: 'smooth' });
+    }
+  }, 60);
+}
+
+function renderStarMap(t) {
+  const canvas = $('starMapCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dprScale = canvas.width / MAP_W;
+
+  ctx.save();
+  ctx.setTransform(dprScale, 0, 0, dprScale, 0, 0);
+
+  // Derin Uzay Arka Planı
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, MAP_H);
+  bgGrad.addColorStop(0, '#04060b');
+  bgGrad.addColorStop(0.2, '#080d1a');
+  bgGrad.addColorStop(0.5, '#0b1324');
+  bgGrad.addColorStop(0.8, '#080d1a');
+  bgGrad.addColorStop(1, '#05070e');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, MAP_W, MAP_H);
+
+  // Arka Plan İnce Takımyıldız Yıldızları
+  ctx.fillStyle = 'rgba(235, 208, 141, 0.45)';
+  for (let i = 0; i < 75; i++) {
+    const sx = (i * 127) % MAP_W, sy = (i * 97) % MAP_H;
+    const tw = 0.5 + 0.5 * Math.sin(t * 2 + i);
+    ctx.globalAlpha = 0.2 + tw * 0.5;
+    ctx.fillRect(sx, sy, 1.2, 1.2);
+  }
+  ctx.globalAlpha = 1;
+
+  // 1. GÖKSEL YILDIZ YOLU (CONSTELLATION HIGHWAY)
+  const maxReached = save.maxCheckpoint || 0;
+  ctx.save();
+
+  // Dış Hali / Altın Işıltı
+  ctx.beginPath();
+  ctx.moveTo(MAP_STARS[0].x, MAP_STARS[0].y);
+  for (let i = 0; i < MAP_STARS.length - 1; i++) {
+    const p0 = MAP_STARS[i], p1 = MAP_STARS[i + 1];
+    const midY = (p0.y + p1.y) / 2;
+    ctx.bezierCurveTo(p0.x, midY, p1.x, midY, p1.x, p1.y);
+  }
+  ctx.strokeStyle = 'rgba(235, 208, 141, 0.14)';
+  ctx.lineWidth = 10;
+  ctx.stroke();
+
+  // Ana Rota Çizgisi
+  ctx.strokeStyle = 'rgba(235, 208, 141, 0.65)';
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  // Akan Yıldız Tozu Enerji Titreşimleri
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 14]);
+  ctx.lineDashOffset = -t * 26;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // 2. YILDIZLAR ARASINDA AÇILAN ÖZELLİKLER & KOZMİK NESNELER (ANIMATED MAP FEATURES)
+  for (const f of MAP_FEATURES) {
+    ctx.save();
+    ctx.translate(f.x, f.y);
+
+    if (f.kind === 'rocks' || f.kind === 'rocks_dense') {
+      // Yoldan geçen hareketli göktaşı kuşağı
+      ctx.save();
+      const rockSpeed = f.kind === 'rocks_dense' ? 2.2 : 1.4;
+      const span = 90;
+      ctx.strokeStyle = 'rgba(235, 208, 141, 0.22)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 6]);
+      ctx.beginPath(); ctx.ellipse(0, 0, 42, 14, 0.2, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      
+      const count = f.kind === 'rocks_dense' ? 5 : 3;
+      for (let k = 0; k < count; k++) {
+        const roff = (t * rockSpeed + k * (span / count)) % span - span / 2;
+        const rx = roff, ry = Math.sin(t * 3 + k) * 5;
+        ctx.save(); ctx.translate(rx, ry); ctx.rotate(t * 2 + k);
+        ctx.fillStyle = '#ebd08d'; ctx.strokeStyle = '#fff2c9'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -4); ctx.lineTo(4, -1); ctx.lineTo(2, 4); ctx.lineTo(-3, 3); ctx.lineTo(-4, -2);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    } else if (f.kind === 'nebula') {
+      ctx.save();
+      // Astral Yeşil/Turkuaz Bulut
+      const np = 1 + 0.1 * Math.sin(t * 2.5);
+      const ng = ctx.createRadialGradient(0, 0, 4, 0, 0, 26 * np);
+      ng.addColorStop(0, 'rgba(110, 197, 179, 0.45)');
+      ng.addColorStop(0.6, 'rgba(110, 197, 179, 0.18)');
+      ng.addColorStop(1, 'transparent');
+      ctx.fillStyle = ng;
+      ctx.beginPath(); ctx.arc(0, 0, 26 * np, 0, TAU); ctx.fill();
+      // İçinde dönen minik yıldız kıvılcımları
+      ctx.rotate(t * 0.8);
+      for (let k = 0; k < 3; k++) {
+        const ang = (k * TAU) / 3;
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(Math.cos(ang) * 12, Math.sin(ang) * 12, 1.8, 0, TAU); ctx.fill();
+      }
+      ctx.restore();
+    } else if (f.kind === 'blackhole') {
+      ctx.save();
+      // Dönen Kara Delik Olay Ufku
+      ctx.rotate(t * 1.6);
+      ctx.strokeStyle = 'rgba(235, 208, 141, 0.8)'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.ellipse(0, 0, 22, 7, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = '#060911'; ctx.shadowColor = '#e57b88'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#fff2c9'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+    } else if (f.kind === 'pulsar') {
+      ctx.save();
+      // Şok Dalgası Yayan Pulsar Nötron Yıldızı
+      const wr = (t * 36) % 38;
+      const alpha = Math.max(0, 1 - wr / 38);
+      ctx.strokeStyle = `rgba(255, 215, 0, ${alpha * 0.85})`;
+      ctx.lineWidth = 1.5; ctx.setLineDash([3, 5]);
+      ctx.beginPath(); ctx.arc(0, 0, wr, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      // Jet Işını
+      ctx.save(); ctx.rotate(t * 4);
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.6)'; ctx.fillRect(-18, -1.2, 36, 2.4);
+      ctx.restore();
+      ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(0, 0, 4.5, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.restore();
+    } else if (f.kind === 'wormhole') {
+      ctx.save();
+      // Çift Solucan Deliği Geçidi & Bükülme Hattı
+      ctx.strokeStyle = 'rgba(156, 122, 214, 0.4)'; ctx.lineWidth = 1.2; ctx.setLineDash([3, 6]); ctx.lineDashOffset = -t * 15;
+      ctx.beginPath(); ctx.moveTo(-16, 0); ctx.lineTo(16, 0); ctx.stroke(); ctx.setLineDash([]);
+      // Sol Vorteks (Giriş)
+      ctx.save(); ctx.translate(-16, 0); ctx.rotate(-t * 3);
+      ctx.strokeStyle = '#9c7ad6'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 1.5); ctx.stroke();
+      ctx.restore();
+      // Sağ Vorteks (Çıkış)
+      ctx.save(); ctx.translate(16, 0); ctx.rotate(t * 3);
+      ctx.strokeStyle = '#6ec5b3'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 1.5); ctx.stroke();
+      ctx.restore();
+      ctx.restore();
+    } else if (f.kind === 'crystal') {
+      ctx.save();
+      // Dönen Zümrüt Kristal Gezegen
+      ctx.fillStyle = '#134e4a'; ctx.strokeStyle = '#6ec5b3'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(0, 0, 10, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.rotate(t * 2);
+      for (let k = 0; k < 6; k++) {
+        const ang = (k * TAU) / 6;
+        const cx = Math.cos(ang) * 17, cy = Math.sin(ang) * 17;
+        ctx.fillStyle = '#6ec5b3'; ctx.shadowColor = '#6ec5b3'; ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 3.5); ctx.lineTo(cx + 2.5, cy); ctx.lineTo(cx, cy + 3.5); ctx.lineTo(cx - 2.5, cy);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    } else if (f.kind === 'superplanet') {
+      ctx.save();
+      // Süper-Kütleli Dev Gezegen
+      ctx.fillStyle = '#3b1d5c'; ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(0, 0, 14, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.rotate(0.35);
+      ctx.strokeStyle = 'rgba(235, 208, 141, 0.7)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.ellipse(0, 0, 24, 6, 0, 0, TAU); ctx.stroke();
+      ctx.restore();
+    } else if (f.kind === 'dual_singularity') {
+      ctx.save();
+      // Çift Singularite
+      for (let s = -1; s <= 1; s += 2) {
+        ctx.save(); ctx.translate(s * 14, 0); ctx.rotate(s * t * 2.5);
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 1.4); ctx.stroke();
+        ctx.fillStyle = '#060911'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    } else if (f.kind === 'hyper_corridor') {
+      ctx.save();
+      for (let k = 0; k < 3; k++) {
+        const offY = ((t * 22 + k * 14) % 42) - 21;
+        const al = Math.max(0, 1 - Math.abs(offY) / 21);
+        ctx.strokeStyle = `rgba(56, 189, 248, ${al * 0.85})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(0, offY, 18 - Math.abs(offY) * 0.3, 6, 0, 0, TAU); ctx.stroke();
+      }
+      ctx.fillStyle = '#38bdf8'; ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(0, 0, 4, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.restore();
+    } else if (f.kind === 'magnetic_storm') {
+      ctx.save();
+      ctx.rotate(t * 1.6);
+      for (let k = 0; k < 4; k++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 1.4;
+        ctx.shadowColor = '#f43f5e'; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 0.6); ctx.stroke();
+      }
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, 3.5, 0, TAU); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Özellik Bilgi Etiketi (Badge Pill)
+    const badgeSide = f.x > 225 ? -1 : 1;
+    const bx = badgeSide * 55, by = 0;
+    ctx.textAlign = badgeSide > 0 ? 'left' : 'right';
+    ctx.textBaseline = 'middle';
+    
+    // Küçük bağlantı noktası
+    ctx.fillStyle = f.color;
+    ctx.beginPath(); ctx.arc(badgeSide * 20, 0, 2, 0, TAU); ctx.fill();
+
+    // Arka plan kapsülü
+    ctx.fillStyle = 'rgba(12, 19, 34, 0.88)';
+    ctx.strokeStyle = `${f.color}55`;
+    ctx.lineWidth = 1;
+    ctx.font = `700 9.5px ${FONT}`;
+    const tw = ctx.measureText(f.name).width;
+    const pad = 8;
+    const rx = badgeSide > 0 ? bx - pad : bx - tw - pad * 2;
+    ctx.beginPath();
+    ctx.roundRect(rx, by - 12, tw + pad * 2.5, 24, 4);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = f.color;
+    ctx.fillText(f.name, badgeSide > 0 ? bx : bx - pad, by - 3);
+
+    ctx.font = `600 7.5px ${FONT_SANS}`;
+    ctx.fillStyle = '#fff2c9';
+    ctx.fillText(f.tag, badgeSide > 0 ? bx : bx - pad, by + 6);
+
+    ctx.restore();
+  }
+
+  // 3. GÖKSEL YILDIZLAR VE SEÇİM RETİKÜLÜ (STARS RENDERING)
+  const selected = save.startCheckpoint || 0;
+  for (const st of MAP_STARS) {
+    const isUnlocked = st.num === 0 || maxReached >= st.num;
+    const isSelected = selected === st.num;
+
+    ctx.save();
+    ctx.translate(st.x, st.y);
+
+    if (isUnlocked) {
+      // Açılmış Görkemli Yıldız
+      const pulse = 1 + 0.08 * Math.sin(t * 3.5 + st.num);
+      const glowR = st.r * 2.4 * pulse;
+
+      // Dış Korona Halosu
+      const hg = ctx.createRadialGradient(0, 0, st.r * 0.35, 0, 0, glowR);
+      hg.addColorStop(0, st.glow || 'rgba(255,215,0,0.7)');
+      hg.addColorStop(0.4, (st.glow || 'rgba(255,215,0,0.7)').replace('0.7', '0.3').replace('0.75', '0.35').replace('0.8', '0.4').replace('0.85', '0.45'));
+      hg.addColorStop(1, 'transparent');
+      ctx.fillStyle = hg;
+      ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TAU); ctx.fill();
+
+      // Dönen Korona Işınları
+      ctx.save();
+      ctx.rotate(t * 0.25);
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < 12; i++) {
+        const ang = (i * TAU) / 12;
+        const rLen = st.r * (1.3 + 0.35 * Math.sin(t * 4 + i * 1.5));
+        ctx.save(); ctx.rotate(ang);
+        const rg = ctx.createLinearGradient(0, 0, rLen, 0);
+        rg.addColorStop(0, st.color);
+        rg.addColorStop(1, 'transparent');
+        ctx.fillStyle = rg;
+        ctx.beginPath(); ctx.moveTo(st.r * 0.5, -st.r * 0.2); ctx.lineTo(rLen, 0); ctx.lineTo(st.r * 0.5, st.r * 0.2); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Kırınım Haçı
+      ctx.save(); ctx.rotate(t * 0.05); ctx.globalCompositeOperation = 'screen';
+      const spk = st.r * 2.6;
+      const sh = ctx.createLinearGradient(-spk, 0, spk, 0);
+      sh.addColorStop(0, 'transparent'); sh.addColorStop(0.5, '#ffffff'); sh.addColorStop(1, 'transparent');
+      ctx.fillStyle = sh; ctx.fillRect(-spk, -1, spk * 2, 2);
+      const sv = ctx.createLinearGradient(0, -spk, 0, spk);
+      sv.addColorStop(0, 'transparent'); sv.addColorStop(0.5, '#ffffff'); sv.addColorStop(1, 'transparent');
+      ctx.fillStyle = sv; ctx.fillRect(-1, -spk, 2, spk * 2);
+      ctx.restore();
+
+      // Akkor Çekirdek
+      const cg = ctx.createRadialGradient(-st.r * 0.25, -st.r * 0.25, 0, 0, 0, st.r);
+      cg.addColorStop(0, '#ffffff');
+      cg.addColorStop(0.35, st.color);
+      cg.addColorStop(1, st.color);
+      ctx.shadowColor = st.color; ctx.shadowBlur = 18;
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(0, 0, st.r, 0, TAU); ctx.fill(); ctx.shadowBlur = 0;
+    } else {
+      // Kilitli Yıldız Silüeti
+      ctx.fillStyle = 'rgba(15, 23, 40, 0.85)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(0, 0, st.r, 0, TAU); ctx.fill(); ctx.stroke();
+      // Kilit Simgesi
+      ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('🔒', 0, 0);
+    }
+
+    // Seçili Yıldız Retikülü (Active Astrolabe Targeting Ring)
+    if (isSelected) {
+      ctx.save();
+      ctx.rotate(t * 1.2);
+      ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 12;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.arc(0, 0, st.r + 14, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 4 Köşe Hedef Köşebendi
+      for (let k = 0; k < 4; k++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(st.r + 18, -5); ctx.lineTo(st.r + 18, 5); ctx.lineTo(st.r + 10, 5);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // Üstte Süzülen Yıldız Başlığı
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.font = `700 11px ${FONT}`;
+    ctx.fillStyle = isUnlocked ? st.color : 'rgba(255, 255, 255, 0.4)';
+    if (isUnlocked) { ctx.shadowColor = st.color; ctx.shadowBlur = 10; }
+    ctx.fillText(st.name, 0, -st.r - 12);
+    ctx.shadowBlur = 0;
+
+    ctx.font = `600 8.5px ${FONT_SANS}`;
+    ctx.fillStyle = isUnlocked ? '#fff2c9' : 'rgba(255, 255, 255, 0.3)';
+    ctx.fillText(`${st.sector} • ${st.type}`, 0, -st.r - 2);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function startGame() {
+  ac(); newGame(false); state = 'play'; save.runs++; persist();
+  showScreen(null); $('hud').classList.remove('hidden');
+  Object.keys(hud).forEach(k => hud[k] = -1); updateHUD();
+  inputLock = performance.now() + 180; holding = false; slowArmed = false;
+  showHint('SOL TIK: FIRLA • SAĞ TIK: MİKRO DÜMEN');
+  if (document.activeElement) document.activeElement.blur();
+}
+
+function showGameOver() {
+  state = 'over';
+  const rec = G.score > save.best;
+  if (rec) save.best = G.score;
+  save.bank += G.money; persist();
+  $('goScore').textContent = G.score; $('goCombo').textContent = 'x' + G.maxMult;
+  $('goPlanets').textContent = G.planetsCount; $('goCrystal').textContent = G.money;
+  $('goNew').classList.toggle('hidden', !rec);
+  updateMenuCheckpointDisplay();
+  $('hud').classList.add('hidden'); showScreen('gameover');
+}
+
+/* ================= GİRDİ ETKİLEŞİMİ ================= */
+function pressStart() {
+  ac();
+  if (state !== 'play' || G.demo || G.ship.dead || performance.now() < inputLock) return;
+  holding = true;
+  if (G.ship.mode === 'orbit') launch(); else slowArmed = true;
+}
+function pressEnd() { holding = false; slowArmed = false; }
+
+function handleRightDown(e) {
+  ac();
+  if (state !== 'play' || !G || G.demo || G.ship.dead) return;
+  updateMousePos(e);
+  mousePos.wy = mousePos.y + G.camY;
+  rightHolding = true;
+  if (G.ship.mode === 'fly') {
+    applyRightNudge(mousePos.wx, mousePos.wy);
+  }
+}
+function handleRightUp() { rightHolding = false; }
+
+canvas.addEventListener('pointerdown', e => {
+  if (e.button === 2) {
+    e.preventDefault();
+    handleRightDown(e);
+    return;
+  }
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault();
+  pressStart();
+});
+window.addEventListener('pointerup', e => {
+  if (e.button === 2) { handleRightUp(); return; }
+  pressEnd();
+});
+window.addEventListener('pointercancel', () => { pressEnd(); handleRightUp(); });
+window.addEventListener('blur', () => { pressEnd(); handleRightUp(); });
+window.addEventListener('pointermove', updateMousePos);
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+    keyLeft = true;
+    if (state === 'play' && G && !G.ship.dead && G.ship.mode === 'fly') {
+      const cur = Math.atan2(G.ship.vy, G.ship.vx);
+      applyRightNudge(G.ship.x + Math.cos(cur - 0.5) * 100, G.ship.y + Math.sin(cur - 0.5) * 100);
+    }
+  }
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+    keyRight = true;
+    if (state === 'play' && G && !G.ship.dead && G.ship.mode === 'fly') {
+      const cur = Math.atan2(G.ship.vy, G.ship.vx);
+      applyRightNudge(G.ship.x + Math.cos(cur + 0.5) * 100, G.ship.y + Math.sin(cur + 0.5) * 100);
+    }
+  }
+  if (e.code !== 'Space' && e.code !== 'Enter') return;
+  e.preventDefault(); if (e.repeat) return;
+  if (state === 'play') pressStart();
+  else if (state === 'menu' || state === 'over') startGame();
+});
+window.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keyLeft = false;
+  if (e.code === 'ArrowRight' || e.code === 'KeyD') keyRight = false;
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); pressEnd(); }
+});
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+const click = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', e => { SFX.click(); e.currentTarget.blur(); fn(); }); };
+click('btnPlay', startGame);
+click('btnRoadmap', showRoadmap);
+click('btnRoadmapBack', showMenu);
+click('btnRoadmapPlay', startGame);
+click('btnTabToMapFromMarket', showRoadmap);
+click('btnTabToMapFromHangar', showRoadmap);
+click('btnTabToHangarFromMap', showHangar);
+click('btnTabToMarketFromMap', showMarket);
+click('btnHangar', showHangar);
+click('btnHangarBack', showMenu);
+click('btnTabToMarket', showMarket);
+click('btnTabToHangar', showHangar);
+click('btnHangarPlay', startGame);
+click('btnMarket', showMarket);
+click('btnBack', showMenu);
+click('btnMarketPlay', startGame);
+click('btnRetry', startGame);
+click('btnGoMarket', showMarket);
+click('btnGoMenu', showMenu);
+click('btnSound', () => { 
+  save.sound = !save.sound; persist(); 
+  $('btnSound').textContent = save.sound ? 'SES: AÇIK' : 'SES: KAPALI'; 
+});
+
+/* ================= DÖNGÜ ================= */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  update(dt); render();
+  if (state === 'roadmap') renderStarMap(now * 0.001);
+  requestAnimationFrame(frame);
+}
+window.addEventListener('resize', () => { resize(); resizeStarMap(); });
+resize(); resizeStarMap(); showMenu(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
